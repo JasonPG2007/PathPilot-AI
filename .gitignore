@@ -1,0 +1,30 @@
+# Visual Studio
+.vs/
+**/.vs/
+
+# Build
+bin/
+obj/
+
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# React
+dist/
+
+# Coverage
+coverage/

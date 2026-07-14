@@ -8,6 +8,7 @@ public sealed class MockRoadmapService : IRoadmapService
     {
         var goal = request.Goal.Trim();
         var focus = GetFocus(goal);
+        var goalPhrases = GetGoalPhrases(goal);
         var existingSkills = (request.ExistingSkills ?? [])
             .Where(skill => !string.IsNullOrWhiteSpace(skill))
             .Select(skill => skill.Trim())
@@ -17,7 +18,7 @@ public sealed class MockRoadmapService : IRoadmapService
 
         return new RoadmapResponse(
             Goal: goal,
-            Summary: $"A practical {request.Timeline.ToLowerInvariant()} roadmap for a {request.CurrentLevel.ToLowerInvariant()} learner pursuing {goal} through {request.LearningStyle.ToLowerInvariant()}-first study.",
+            Summary: $"A practical {request.Timeline.ToLowerInvariant()} roadmap for a {request.CurrentLevel.ToLowerInvariant()} learner pursuing {goalPhrases.Pursuit} through {request.LearningStyle.ToLowerInvariant()}-first study.",
             Timeline: request.Timeline,
             WeeklyHours: request.WeeklyHours,
             StartingLevel: request.CurrentLevel,
@@ -29,7 +30,7 @@ public sealed class MockRoadmapService : IRoadmapService
                     "Build Core Foundations",
                     "Weeks 1-4",
                     $"{request.WeeklyHours} hours/week",
-                    $"Establish the essential knowledge needed to progress confidently toward {goal}.",
+                    $"Establish the essential knowledge needed to progress confidently toward {goalPhrases.Direction}.",
                     focus.FoundationSkills,
                     prerequisites,
                     ["Complete a baseline skills review", "Build a focused practice project", "Pass the foundation milestone"],
@@ -71,8 +72,25 @@ public sealed class MockRoadmapService : IRoadmapService
             [
                 new SuggestedProject(1, focus.FoundationProject, "Foundation", "Demonstrate command of the core concepts with a focused build.", "violet"),
                 new SuggestedProject(2, focus.AppliedProject, "Applied", "Create a realistic end-to-end workflow with documentation and tests.", "teal"),
-                new SuggestedProject(3, focus.CapstoneProject, "Capstone", $"Show role readiness for {goal} with a polished final system.", "blue")
+                new SuggestedProject(3, focus.CapstoneProject, "Capstone", $"Show readiness for {goalPhrases.Role} with a polished final system.", "blue")
             ]);
+    }
+
+    private static GoalPhrases GetGoalPhrases(string goal)
+    {
+        const string BecomePrefix = "Become ";
+
+        if (goal.StartsWith(BecomePrefix, StringComparison.OrdinalIgnoreCase))
+        {
+            var targetRole = goal[BecomePrefix.Length..].Trim();
+
+            return new GoalPhrases(
+                $"the goal of becoming {targetRole}",
+                $"becoming {targetRole}",
+                $"{targetRole} role");
+        }
+
+        return new GoalPhrases(goal, goal, goal);
     }
 
     private static int GetFeasibilityScore(int weeklyHours) => weeklyHours switch
@@ -129,4 +147,6 @@ public sealed class MockRoadmapService : IRoadmapService
         string FoundationProject,
         string AppliedProject,
         string CapstoneProject);
+
+    private sealed record GoalPhrases(string Pursuit, string Direction, string Role);
 }

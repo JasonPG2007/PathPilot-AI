@@ -1,6 +1,16 @@
 @PathPilot_AI_API_HostAddress = http://localhost:5072
 
-GET {{PathPilot_AI_API_HostAddress}}/weatherforecast/
+POST {{PathPilot_AI_API_HostAddress}}/api/roadmaps/generate
+Content-Type: application/json
 Accept: application/json
+
+{
+  "currentLevel": "Mid-level",
+  "goal": "Become a Machine Learning Engineer",
+  "timeline": "6 Months (Balanced)",
+  "weeklyHours": 15,
+  "existingSkills": ["Python", "SQL"],
+  "learningStyle": "Practice"
+}
 
 ###

@@ -1,16 +1,20 @@
-import { Link } from 'react-router-dom'
+import AgentWorkflowVisual from '../components/landing/AgentWorkflowVisual.jsx'
+import FeaturesSection from '../components/landing/FeaturesSection.jsx'
+import FinalCtaSection from '../components/landing/FinalCtaSection.jsx'
+import HeroSection from '../components/landing/HeroSection.jsx'
+import HowItWorksSection from '../components/landing/HowItWorksSection.jsx'
+import TrustedBySection from '../components/landing/TrustedBySection.jsx'
+import '../styles/landing.css'
 
 function LandingPage() {
   return (
-    <section className="placeholder-page">
-      <p className="eyebrow">Personalized learning roadmaps</p>
-      <h1>Turn your goal into a practical learning journey.</h1>
-      <p className="page-intro">
-        PathPilot AI plans, reviews, and refines a roadmap around your goals,
-        experience, and available time.
-      </p>
-      <Link className="button-link" to="/create">Create your journey</Link>
-    </section>
+    <div className="landing-page" id="top">
+      <HeroSection visual={<AgentWorkflowVisual />} />
+      <TrustedBySection />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <FinalCtaSection />
+    </div>
   )
 }
 

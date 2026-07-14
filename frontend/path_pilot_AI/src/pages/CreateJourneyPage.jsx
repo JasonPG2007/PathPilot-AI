@@ -28,7 +28,11 @@ function CreateJourneyPage() {
 
   function handleSubmit(event) {
     event.preventDefault()
-    navigate('/processing')
+    navigate('/processing', {
+      state: {
+        learner: { goal, level, timeline, hours, skills, learningStyle },
+      },
+    })
   }
 
   return (

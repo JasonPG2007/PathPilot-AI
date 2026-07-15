@@ -5,22 +5,15 @@ import ProjectCard from '../components/roadmap/ProjectCard.jsx'
 import RoadmapActions from '../components/roadmap/RoadmapActions.jsx'
 import RoadmapHeader from '../components/roadmap/RoadmapHeader.jsx'
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
+import { getStoredRoadmap, hasActiveGenerationAttempt } from '../lib/roadmapSession.js'
 import '../styles/roadmap.css'
-
-function getStoredRoadmap() {
-  try {
-    const storedState = sessionStorage.getItem('pathpilotRoadmap')
-    return storedState ? JSON.parse(storedState) : null
-  } catch {
-    return null
-  }
-}
 
 function RoadmapPage() {
   const location = useLocation()
-  const fallbackState = getStoredRoadmap()
-  const learner = location.state?.learner ?? fallbackState?.learner
-  const roadmap = location.state?.roadmap ?? fallbackState?.roadmap
+  const navigationState = location.state?.source === 'api' ? location.state : null
+  const fallbackState = hasActiveGenerationAttempt() ? null : getStoredRoadmap()
+  const learner = navigationState?.learner ?? fallbackState?.learner
+  const roadmap = navigationState?.roadmap ?? fallbackState?.roadmap
 
   if (!learner || !roadmap) {
     return (

@@ -4,6 +4,7 @@ import AgentStatusCard from '../components/processing/AgentStatusCard.jsx'
 import ProcessingError from '../components/processing/ProcessingError.jsx'
 import { demoLearnerProfile } from '../data/mockRoadmap.js'
 import { generateRoadmap } from '../services/roadmapApi.js'
+import { beginGenerationAttempt, devLog, failGenerationAttempt, storeGeneratedRoadmap } from '../lib/roadmapSession.js'
 import '../styles/processing.css'
 
 const workflowStages = [
@@ -19,6 +20,8 @@ const agents = [
   { name: 'Planner Revision', role: 'Final roadmap refinement', icon: 'R', tasks: ['Applying critic feedback', 'Refining milestones', 'Finalizing the roadmap'] },
 ]
 
+const initializedAttempts = new Set()
+
 function getAgentState(agentIndex, stage) {
   if (stage > agentIndex) return 'completed'
   if (stage === agentIndex) return 'active'
@@ -33,7 +36,10 @@ function ProcessingPage() {
   const [roadmap, setRoadmap] = useState(null)
   const [error, setError] = useState('')
   const [requestAttempt, setRequestAttempt] = useState(0)
+  const [directGenerationId] = useState(() => crypto.randomUUID())
   const learner = location.state?.learner ?? demoLearnerProfile
+  const generationId = location.state?.generationId ?? directGenerationId
+  const requestId = `${generationId}:${requestAttempt}`
   const currentStage = workflowStages[stage]
 
   useEffect(() => {
@@ -48,18 +54,27 @@ function ProcessingPage() {
 
   useEffect(() => {
     let cancelled = false
-    generateRoadmap(learner)
+    if (!initializedAttempts.has(requestId)) {
+      initializedAttempts.add(requestId)
+      beginGenerationAttempt(requestId)
+    }
+    generateRoadmap(learner, requestId)
       .then((result) => { if (!cancelled) setRoadmap(result) })
-      .catch((requestError) => { if (!cancelled) setError(requestError.message) })
+      .catch((requestError) => {
+        if (!cancelled) {
+          failGenerationAttempt(requestId)
+          setError(requestError.message)
+        }
+      })
     return () => { cancelled = true }
-  }, [learner, requestAttempt])
+  }, [learner, requestId])
 
   useEffect(() => {
     if (!animationCompleted || !roadmap) return
-    const navigationState = { learner, roadmap }
-    sessionStorage.setItem('pathpilotRoadmap', JSON.stringify(navigationState))
+    const navigationState = storeGeneratedRoadmap({ learner, roadmap, generationId })
+    devLog('navigation to /roadmap')
     navigate('/roadmap', { state: navigationState })
-  }, [animationCompleted, learner, navigate, roadmap])
+  }, [animationCompleted, generationId, learner, navigate, roadmap])
 
   function retryRequest() {
     setError('')

@@ -1,5 +1,8 @@
+import { devLog } from '../lib/roadmapSession.js'
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
 const REQUEST_TIMEOUT_MS = 120000
+const generationRequests = new Map()
 
 function toApiRequest(learner) {
   return {
@@ -21,6 +24,20 @@ function toRoadmapViewModel(response) {
   }
 }
 
+function isValidRoadmap(roadmap) {
+  return Boolean(
+    roadmap &&
+    typeof roadmap.goal === 'string' && roadmap.goal.trim() &&
+    Number.isInteger(roadmap.feasibilityScore) &&
+    roadmap.feasibilityScore >= 0 && roadmap.feasibilityScore <= 100 &&
+    Array.isArray(roadmap.phases) && roadmap.phases.length > 0 &&
+    roadmap.phases.every((phase) => phase?.recommendedProject && Array.isArray(phase.skills)) &&
+    roadmap.criticReview && typeof roadmap.criticReview.riskLevel === 'string' &&
+    Array.isArray(roadmap.skillVault) &&
+    Array.isArray(roadmap.suggestedProjects)
+  )
+}
+
 async function getErrorMessage(response) {
   try {
     const problem = await response.json()
@@ -30,11 +47,12 @@ async function getErrorMessage(response) {
   }
 }
 
-export async function generateRoadmap(learner) {
+async function executeGeneration(learner) {
   const controller = new AbortController()
   const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
 
   try {
+    devLog('generation request started')
     const response = await fetch(`${API_BASE_URL}/api/roadmaps/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -43,7 +61,20 @@ export async function generateRoadmap(learner) {
     })
 
     if (!response.ok) throw new Error(await getErrorMessage(response))
-    return toRoadmapViewModel(await response.json())
+
+    let normalized
+    try {
+      normalized = toRoadmapViewModel(await response.json())
+    } catch (error) {
+      devLog('response validation failed')
+      throw new Error('The roadmap service returned an invalid roadmap. Please try again.', { cause: error })
+    }
+    if (!isValidRoadmap(normalized)) {
+      devLog('response validation failed')
+      throw new Error('The roadmap service returned an invalid roadmap. Please try again.')
+    }
+    devLog('API response accepted')
+    return normalized
   } catch (error) {
     if (error.name === 'AbortError') {
       throw new Error('The roadmap request timed out. Check that the API is running, then try again.', { cause: error })
@@ -55,4 +86,15 @@ export async function generateRoadmap(learner) {
   } finally {
     window.clearTimeout(timeout)
   }
+}
+
+export function generateRoadmap(learner, requestId) {
+  if (generationRequests.has(requestId)) {
+    devLog('duplicate request blocked')
+    return generationRequests.get(requestId)
+  }
+
+  const request = executeGeneration(learner)
+  generationRequests.set(requestId, request)
+  return request
 }

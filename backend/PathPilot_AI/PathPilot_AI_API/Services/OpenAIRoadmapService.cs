@@ -13,15 +13,18 @@ public sealed class OpenAIRoadmapService : IRoadmapService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IConfiguration _configuration;
+    private readonly IWebHostEnvironment _environment;
     private readonly ILogger<OpenAIRoadmapService> _logger;
     private readonly OpenAIResponsesClient _responsesClient;
 
     public OpenAIRoadmapService(
         IConfiguration configuration,
+        IWebHostEnvironment environment,
         ILogger<OpenAIRoadmapService> logger,
         OpenAIResponsesClient responsesClient)
     {
         _configuration = configuration;
+        _environment = environment;
         _logger = logger;
         _responsesClient = responsesClient;
     }
@@ -72,7 +75,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 cancellationToken);
 
             var criticJson = JsonSerializer.Serialize(criticFeedback, JsonOptions);
-            return await GenerateValidatedAsync<RoadmapResponse>(
+            var finalRoadmap = await GenerateValidatedAsync<RoadmapResponse>(
                 apiKey,
                 model,
                 "Revision",
@@ -83,6 +86,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 RevisionMaxOutputTokens,
                 GetRoadmapValidationFailure,
                 cancellationToken);
+            return NormalizeFeasibilityScore(finalRoadmap);
         }
         catch (RoadmapGenerationException)
         {
@@ -384,6 +388,29 @@ public sealed class OpenAIRoadmapService : IRoadmapService
         if (string.IsNullOrWhiteSpace(feedback.TimelineAdjustments)) return "timelineAdjustments was empty";
         if (string.IsNullOrWhiteSpace(feedback.PrerequisiteCorrections)) return "prerequisiteCorrections was empty";
         return null;
+    }
+
+    private RoadmapResponse NormalizeFeasibilityScore(RoadmapResponse roadmap)
+    {
+        var normalizedScore = roadmap.CriticReview.RiskLevel switch
+        {
+            "Low" => Math.Clamp(roadmap.FeasibilityScore, 75, 100),
+            "Medium" => Math.Clamp(roadmap.FeasibilityScore, 45, 74),
+            "High" => Math.Clamp(roadmap.FeasibilityScore, 0, 44),
+            _ => roadmap.FeasibilityScore
+        };
+
+        if (normalizedScore == roadmap.FeasibilityScore)
+        {
+            return roadmap;
+        }
+
+        if (_environment.IsDevelopment())
+        {
+            _logger.LogInformation("feasibilityScore normalized to match critic riskLevel.");
+        }
+
+        return roadmap with { FeasibilityScore = normalizedScore };
     }
 
     private static string GetHttpFailureDetail(string stageName, int statusCode)

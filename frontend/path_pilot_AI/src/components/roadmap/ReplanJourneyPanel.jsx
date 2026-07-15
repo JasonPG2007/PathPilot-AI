@@ -14,6 +14,7 @@ function ReplanJourneyPanel({ completedMilestones, completedSkills, error, learn
 
   function handleSubmit(event) {
     event.preventDefault()
+    if (submitting) return
     onSubmit({ weeklyHours: Number(weeklyHours), timeline, mainDifficulty, note: note.trim() || null })
   }
 

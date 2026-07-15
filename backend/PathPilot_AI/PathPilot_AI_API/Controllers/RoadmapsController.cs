@@ -11,12 +11,14 @@ public sealed class RoadmapsController : ControllerBase
     private readonly IRoadmapService _roadmapService;
     private readonly IReplanRoadmapService _replanService;
     private readonly IRoadmapExplanationService _explanationService;
+    private readonly ILogger<RoadmapsController> _logger;
 
-    public RoadmapsController(IRoadmapService roadmapService, IReplanRoadmapService replanService, IRoadmapExplanationService explanationService)
+    public RoadmapsController(IRoadmapService roadmapService, IReplanRoadmapService replanService, IRoadmapExplanationService explanationService, ILogger<RoadmapsController> logger)
     {
         _roadmapService = roadmapService;
         _replanService = replanService;
         _explanationService = explanationService;
+        _logger = logger;
     }
 
     [HttpPost("generate")]
@@ -69,8 +71,27 @@ public sealed class RoadmapsController : ControllerBase
         {
             return ConfigurationProblem(exception);
         }
+        catch (UpstreamServiceTimeoutException exception)
+        {
+            _logger.LogWarning("Replan upstream request timed out.");
+            return Problem(
+                statusCode: StatusCodes.Status504GatewayTimeout,
+                title: "The AI service took too long to respond.",
+                detail: exception.Message,
+                instance: HttpContext.Request.Path);
+        }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogInformation("Replan stopped because the client disconnected.");
+            return Problem(
+                statusCode: 499,
+                title: "The client closed the request.",
+                detail: "Replanning stopped after the client disconnected.",
+                instance: HttpContext.Request.Path);
+        }
         catch (OperationCanceledException)
         {
+            _logger.LogInformation("Replan request was cancelled before completion.");
             return CancellationProblem();
         }
         catch (RoadmapGenerationException exception)

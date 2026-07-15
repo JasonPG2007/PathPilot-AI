@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiagramProject } from '@fortawesome/free-solid-svg-icons'
@@ -40,6 +40,7 @@ function RoadmapPage() {
   const [learner, setLearner] = useState(initialLearner)
   const [replanOpen, setReplanOpen] = useState(false)
   const [replanPending, setReplanPending] = useState(false)
+  const replanInFlight = useRef(false)
   const [replanError, setReplanError] = useState('')
   const [explanationContext, setExplanationContext] = useState(null)
   const [explanation, setExplanation] = useState(null)
@@ -85,6 +86,8 @@ function RoadmapPage() {
   const completedMilestones = roadmap.phases.flatMap((phase) => phase.milestones.filter((_, index) => completedMilestoneSet.has(getMilestoneId(phase.id, index, phase.milestoneIds?.[index]))))
 
   async function handleReplan(constraints) {
+    if (replanInFlight.current) return
+    replanInFlight.current = true
     setReplanPending(true)
     setReplanError('')
     try {
@@ -108,6 +111,7 @@ function RoadmapPage() {
     } catch (error) {
       setReplanError(error.message)
     } finally {
+      replanInFlight.current = false
       setReplanPending(false)
     }
   }

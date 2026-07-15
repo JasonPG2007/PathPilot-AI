@@ -12,3 +12,11 @@ public sealed class RoadmapGenerationException : Exception
     {
     }
 }
+
+public sealed class UpstreamServiceTimeoutException : Exception
+{
+    public UpstreamServiceTimeoutException(string message, Exception innerException)
+        : base(message, innerException)
+    {
+    }
+}

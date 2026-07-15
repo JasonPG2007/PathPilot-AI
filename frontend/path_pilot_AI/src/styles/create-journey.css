@@ -29,6 +29,7 @@
 .learning-option { display: flex; min-height: 5rem; align-items: center; justify-content: center; flex-direction: column; gap: 0.55rem; border: 1px solid var(--color-border); border-radius: 0.5rem; color: var(--color-text-muted); background: #fff; font-size: 0.72rem; cursor: pointer; }
 .learning-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .learning-option--selected { border-color: var(--color-primary); color: var(--color-primary); background: #faf9ff; box-shadow: 0 0 0 1px rgba(79,70,229,.08); }
+.learning-option:has(input:focus-visible) { outline: 2px solid var(--color-primary); outline-offset: 3px; box-shadow: var(--focus-ring); }
 .learning-icon { font-size: 1.1rem; }
 .generate-button { display: flex; width: 100%; min-height: 3.7rem; align-items: center; justify-content: center; gap: 0.7rem; border: 0; border-radius: 0.55rem; color: #fff; background: linear-gradient(100deg, #087d79, #3324e9); box-shadow: 0 7px 16px rgba(50,36,233,.2); font-weight: 800; cursor: pointer; }
 .summary-column { display: flex; flex-direction: column; gap: 1.2rem; }
@@ -61,6 +62,17 @@
   .summary-column { grid-row: 2; }
 }
 
+/* Typography scale */
+.journey-form-card h1 { font-size: clamp(2.5rem, 5vw, 3.5rem); line-height: var(--line-height-tight); }
+.form-intro, .community-insight p, .summary-note { font-size: var(--font-size-body); line-height: var(--line-height-body); }
+.journey-form-card label, .learning-style-fieldset legend, .slider-heading, .skill-field > label { font-size: var(--font-size-small); }
+.step-label, .summary-outcome span, .summary-facts span, .intensity-row span, .insight-heading { font-size: var(--font-size-label); }
+.journey-form-card input, .journey-form-card select, .learning-option, .skill-chip, .add-skill-form input { font-size: var(--font-size-body); line-height: 1.5; }
+.generate-button { font-size: var(--font-size-body); font-weight: var(--font-weight-semibold); }
+.live-summary-card { padding: 2.15rem; }
+.live-summary-card h2 { font-size: var(--font-size-heading-sm); }
+.summary-outcome strong, .summary-facts strong, .intensity-row strong, .approach-row strong, .approach-row span { font-size: var(--font-size-body); line-height: 1.5; }
+
 @media (max-width: 36rem) {
   .create-page { padding: 1.5rem 0.75rem 5rem; }
   .journey-form-card { padding: 1.5rem; }
@@ -68,3 +80,14 @@
   .learning-options { grid-template-columns: 1fr 1fr; }
   .live-summary-card { padding: 1.4rem; }
 }
+
+/* Final typography overrides */
+.journey-form-card h1 { font-size: clamp(2.25rem, 4vw, 3rem); line-height: var(--line-height-tight); }
+.form-intro, .community-insight p, .summary-note { font-size: var(--font-size-body); line-height: var(--line-height-body); }
+.journey-form-card label, .learning-style-fieldset legend, .slider-heading, .skill-field > label { font-size: var(--font-size-small); }
+.step-label, .summary-outcome span, .summary-facts span, .intensity-row span, .insight-heading { font-size: var(--font-size-label); }
+.journey-form-card input, .journey-form-card select, .learning-option, .skill-chip, .add-skill-form input { font-size: var(--font-size-body); line-height: 1.5; }
+.generate-button { font-size: var(--font-size-body); font-weight: var(--font-weight-semibold); }
+.live-summary-card { padding: 2.15rem; }
+.live-summary-card h2 { font-size: var(--font-size-heading-sm); }
+.summary-outcome strong, .summary-facts strong, .intensity-row strong, .approach-row strong, .approach-row span { font-size: var(--font-size-body); line-height: 1.5; }

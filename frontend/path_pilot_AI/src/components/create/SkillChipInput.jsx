@@ -22,7 +22,7 @@ function SkillChipInput({ skills, onChange }) {
         {skills.map((skill) => (
           <span className="skill-chip" key={skill}>
             {skill}
-            <button aria-label={`Remove ${skill}`} onClick={() => removeSkill(skill)} type="button">×</button>
+<button aria-label={`Remove ${skill}`} onClick={() => removeSkill(skill)} type="button"><FontAwesomeIcon aria-hidden="true" icon={faXmark} /></button>
           </span>
         ))}
         <div className="add-skill-form">
@@ -45,3 +45,5 @@ function SkillChipInput({ skills, onChange }) {
 }
 
 export default SkillChipInput
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faXmark } from '@fortawesome/free-solid-svg-icons'

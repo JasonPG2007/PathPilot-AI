@@ -163,3 +163,12 @@
   .processing-error { padding: 2rem 1.25rem; }
   .processing-error__actions { flex-direction: column; }
 }
+
+/* Typography scale */
+.processing-hero h1 { font-size: clamp(2.25rem, 4vw, 3.5rem); line-height: var(--line-height-tight); }
+.processing-hero > p:not(.processing-eyebrow), .processing-note, .completion-message p, .processing-error > p:not(.processing-eyebrow) { font-size: var(--font-size-body); line-height: var(--line-height-body); }
+.processing-eyebrow, .agent-state { font-size: var(--font-size-label); }
+.overall-progress, .agent-card-heading p, .agent-status-card li, .completion-message strong { font-size: var(--font-size-body); line-height: 1.5; }
+.agent-card-heading h2 { font-size: var(--font-size-heading-sm); }
+.agent-status-card { padding: 1.65rem; }
+.processing-error h1 { font-size: var(--font-size-heading-lg); }

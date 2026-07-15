@@ -5,9 +5,11 @@ function ResourceCard({ compact = false, resource }) {
       <h5>{resource.title}</h5>
       <p className="resource-provider">{resource.provider} · {resource.estimatedTime}</p>
       {!compact && <><span className="resource-match">Matches: {resource.matchLabel}</span><p className="resource-reason">{resource.recommendationReason}</p></>}
-      <a aria-label={`Open ${resource.title} from ${resource.provider} in a new tab`} href={resource.url} rel="noopener noreferrer" target="_blank">View external resource <span aria-hidden="true">↗</span></a>
+      <a aria-label={`Open ${resource.title} from ${resource.provider} in a new tab`} href={resource.url} rel="noopener noreferrer" target="_blank">View external resource <FontAwesomeIcon aria-hidden="true" icon={faArrowUpRightFromSquare} /></a>
     </article>
   )
 }
 
 export default ResourceCard
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowUpRightFromSquare } from '@fortawesome/free-solid-svg-icons'

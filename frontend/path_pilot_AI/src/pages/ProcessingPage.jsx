@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faArrowRight, faCircleCheck, faRoute, faWandSparkles } from '@fortawesome/free-solid-svg-icons'
 import AgentStatusCard from '../components/processing/AgentStatusCard.jsx'
 import ProcessingError from '../components/processing/ProcessingError.jsx'
 import { demoLearnerProfile } from '../data/mockRoadmap.js'
@@ -91,7 +93,7 @@ function ProcessingPage() {
       <section className="processing-hero">
         <div className={`processing-orbit${stage === 3 ? ' processing-orbit--complete' : ''}`} aria-hidden="true">
           <span className="orbit-ring" />
-          <span className="orbit-core">{stage === 3 ? '✓' : '✦'}</span>
+          <span className="orbit-core"><FontAwesomeIcon icon={stage === 3 ? faCircleCheck : faWandSparkles} /></span>
         </div>
         <p className="processing-eyebrow">MULTI-AGENT ORCHESTRATION</p>
         <h1>Creating Your Personalized Learning Journey</h1>
@@ -108,13 +110,13 @@ function ProcessingPage() {
           {agents.map((agent, index) => (
             <div className="agent-stage" key={agent.name}>
               <AgentStatusCard {...agent} state={getAgentState(index, stage)} />
-              {index < agents.length - 1 && <div className={`workflow-connector${stage > index ? ' workflow-connector--complete' : ''}`} aria-hidden="true"><span>→</span></div>}
+              {index < agents.length - 1 && <div className={`workflow-connector${stage > index ? ' workflow-connector--complete' : ''}`} aria-hidden="true"><span><FontAwesomeIcon icon={faArrowRight} /></span></div>}
             </div>
           ))}
         </div>
 
         <div className={`completion-message${stage === 3 ? ' completion-message--visible' : ''}`} aria-live="polite">
-          <span>✓</span>
+          <span><FontAwesomeIcon aria-hidden="true" icon={stage === 3 ? faCircleCheck : faRoute} /></span>
           <div><strong>{roadmap ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{roadmap ? 'Opening your personalized learning journey…' : animationCompleted ? 'Finalizing your personalized roadmap...' : 'The agents are refining your learning journey…'}</p></div>
         </div>
       </section>

@@ -1,5 +1,7 @@
 import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBookOpen, faCode, faDiagramProject, faEye, faWandMagicSparkles } from "@fortawesome/free-solid-svg-icons";
 import GoalInput from "../components/create/GoalInput.jsx";
 import HoursSlider from "../components/create/HoursSlider.jsx";
 import LearningStyleOption from "../components/create/LearningStyleOption.jsx";
@@ -17,10 +19,10 @@ const timelineOptions = [
   "12 Months (Relaxed)",
 ];
 const learningStyles = [
-  { value: "Visual", icon: "◉" },
-  { value: "Reading", icon: "▤" },
-  { value: "Practice", icon: "▣" },
-  { value: "Mixed", icon: "◇" },
+  { value: "Visual", icon: faEye },
+  { value: "Reading", icon: faBookOpen },
+  { value: "Practice", icon: faCode },
+  { value: "Mixed", icon: faDiagramProject },
 ];
 
 function CreateJourneyPage() {
@@ -99,7 +101,7 @@ function CreateJourneyPage() {
           </fieldset>
 
           <button className="generate-button" disabled={isSubmitting} type="submit">
-            Generate Roadmap <span aria-hidden="true">✣</span>
+            {isSubmitting ? 'Opening workflow…' : 'Generate Roadmap'} <FontAwesomeIcon aria-hidden="true" icon={faWandMagicSparkles} />
           </button>
         </form>
 

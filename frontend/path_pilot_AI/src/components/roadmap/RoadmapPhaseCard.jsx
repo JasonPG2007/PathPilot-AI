@@ -2,11 +2,13 @@ import { getSkillId } from '../../lib/learnerMemory.js'
 import MilestoneList from './MilestoneList.jsx'
 import PhaseResources from './PhaseResources.jsx'
 import SkillBadge from './SkillBadge.jsx'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCircleQuestion, faFolderOpen, faLocationDot } from '@fortawesome/free-solid-svg-icons'
 
 function RoadmapPhaseCard({ completedMilestoneIds, completedSkillIds, current, nextProject, number, onExplain, onToggleMilestone, onToggleSkill, phase, previousProject, resources }) {
   return (
     <article className="roadmap-phase">
-      <span className="phase-number">{number}</span>
+      <span className="phase-number">{current ? <FontAwesomeIcon aria-label={`Current phase ${number}`} icon={faLocationDot} /> : number}</span>
       <div className={`phase-card${current ? ' phase-card--current' : ''}`}>
         <div className="phase-card-heading"><div><p>PHASE {number}{current ? ' · CURRENT' : ''}</p><h3>{phase.title}</h3></div><span className="duration-badge">{phase.duration}</span></div>
         <p className="phase-description">{phase.description}</p>
@@ -16,7 +18,7 @@ function RoadmapPhaseCard({ completedMilestoneIds, completedSkillIds, current, n
             const id = getSkillId(phase.id, index, phase.skillIds?.[index])
             return <SkillBadge completed={completedSkillIds.has(id)} key={id} onExplain={() => onExplain({ itemId: id, selectedItem: skill, previousItem: phase.skills[index - 1] ?? null, nextItem: phase.skills[index + 1] ?? null, phaseTitle: phase.title })} onToggle={() => onToggleSkill(id)}>{skill}</SkillBadge>
           })}</div></div>
-          <div className={`phase-project phase-project--${phase.project.accent}`}><span>◇</span><div><small>{phase.project.type}</small><strong>{phase.project.title}</strong><button className="why-action" onClick={() => onExplain({ itemId: `phase:${phase.id}:project`, selectedItem: phase.project.title, previousItem: previousProject ?? null, nextItem: nextProject ?? null, phaseTitle: phase.title })} type="button">Why?</button></div></div>
+          <div className={`phase-project phase-project--${phase.project.accent}`}><span><FontAwesomeIcon aria-hidden="true" icon={faFolderOpen} /></span><div><small>{phase.project.type}</small><strong>{phase.project.title}</strong><button className="why-action" onClick={() => onExplain({ itemId: `phase:${phase.id}:project`, selectedItem: phase.project.title, previousItem: previousProject ?? null, nextItem: nextProject ?? null, phaseTitle: phase.title })} type="button"><FontAwesomeIcon aria-hidden="true" icon={faCircleQuestion} /> Why?</button></div></div>
         </div>
         <MilestoneList completedIds={completedMilestoneIds} milestoneIds={phase.milestoneIds} milestones={phase.milestones} onExplain={(context) => onExplain({ ...context, phaseTitle: phase.title })} onToggle={onToggleMilestone} phaseId={phase.id} />
         <PhaseResources resources={resources} />

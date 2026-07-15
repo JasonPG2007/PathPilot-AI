@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faDiagramProject } from '@fortawesome/free-solid-svg-icons'
 import CriticReviewCard from '../components/roadmap/CriticReviewCard.jsx'
 import ExplanationPanel from '../components/roadmap/ExplanationPanel.jsx'
 import LearnerSummary from '../components/roadmap/LearnerSummary.jsx'
@@ -49,10 +51,10 @@ function RoadmapPage() {
 
   if (!displayLearner || !roadmap || !memory || !memoryContext || !strategyState) {
     return (
-      <div className="roadmap-page roadmap-empty-state">
+      <div className="roadmap-page roadmap-empty-state" role="status">
         <p className="roadmap-kicker">NO ROADMAP FOUND</p>
         <h1>Create your first learning journey.</h1>
-        <p>Your generated roadmap will appear here after the agent workflow is complete.</p>
+        <p>No active roadmap was found. Create a journey to generate a new learning plan.</p>
         <Link className="button" to="/create">Create Journey</Link>
       </div>
     )
@@ -162,7 +164,7 @@ function RoadmapPage() {
         </aside>
       </div>
       <section className="projects-section roadmap-variant-transition" key={`projects-${selectedStrategy}`}>
-        <div className="roadmap-section-heading"><div><span>▣</span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
+        <div className="roadmap-section-heading"><div><span><FontAwesomeIcon aria-hidden="true" icon={faDiagramProject} /></span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
         <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
       <TrustedResourcesSection resources={resourceRecommendations.highlights} />

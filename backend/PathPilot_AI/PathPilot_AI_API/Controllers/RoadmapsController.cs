@@ -9,13 +9,13 @@ namespace PathPilot_AI_API.Controllers;
 public sealed class RoadmapsController : ControllerBase
 {
     private readonly IRoadmapService _roadmapService;
-    private readonly MockRoadmapService _mockRoadmapService;
+    private readonly IReplanRoadmapService _replanService;
     private readonly IRoadmapExplanationService _explanationService;
 
-    public RoadmapsController(IRoadmapService roadmapService, MockRoadmapService mockRoadmapService, IRoadmapExplanationService explanationService)
+    public RoadmapsController(IRoadmapService roadmapService, IReplanRoadmapService replanService, IRoadmapExplanationService explanationService)
     {
         _roadmapService = roadmapService;
-        _mockRoadmapService = mockRoadmapService;
+        _replanService = replanService;
         _explanationService = explanationService;
     }
 
@@ -48,7 +48,18 @@ public sealed class RoadmapsController : ControllerBase
         [FromBody] ReplanRoadmapRequest request,
         CancellationToken cancellationToken)
     {
-        return Ok(await _mockRoadmapService.ReplanAsync(request, cancellationToken));
+        try
+        {
+            return Ok(await _replanService.ReplanAsync(request, cancellationToken));
+        }
+        catch (RoadmapGenerationException exception)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Roadmap replanning failed.",
+                detail: exception.Message,
+                instance: HttpContext.Request.Path);
+        }
     }
 
     [HttpPost("explain")]

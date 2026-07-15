@@ -2,7 +2,7 @@ using PathPilot_AI_API.Models;
 
 namespace PathPilot_AI_API.Services;
 
-public sealed class MockRoadmapService : IRoadmapService
+public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
 {
     public Task<RoadmapResponse> GenerateAsync(GenerateRoadmapRequest request, CancellationToken cancellationToken)
     {

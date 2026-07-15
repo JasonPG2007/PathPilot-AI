@@ -9,11 +9,13 @@ import ReplanJourneyPanel from '../components/roadmap/ReplanJourneyPanel.jsx'
 import ReplanSummary from '../components/roadmap/ReplanSummary.jsx'
 import RoadmapActions from '../components/roadmap/RoadmapActions.jsx'
 import RoadmapHeader from '../components/roadmap/RoadmapHeader.jsx'
+import RoadmapStrategySelector from '../components/roadmap/RoadmapStrategySelector.jsx'
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
 import { getMostRecentRoadmap, getStoredRoadmap, hasActiveGenerationAttempt, storeReplannedRoadmap } from '../lib/roadmapSession.js'
 import { getMilestoneId, getProgress, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
 import { requestReplan } from '../services/replanApi.js'
 import { requestExplanation } from '../services/explanationApi.js'
+import { getStrategyComparisons, getStrategyRoadmap, loadStrategyState, selectStrategy, storeReplannedStrategy } from '../services/roadmapVariants.js'
 import '../styles/roadmap.css'
 
 function RoadmapPage() {
@@ -25,20 +27,24 @@ function RoadmapPage() {
   const initialRoadmap = activeState?.roadmap
   const generatedAt = activeState?.generatedAt
   const generationId = activeState?.generationId
+  const journeyId = generationId ?? generatedAt
+  const [strategyState, setStrategyState] = useState(() => journeyId && initialRoadmap ? loadStrategyState(journeyId, initialRoadmap) : null)
+  const roadmap = strategyState ? getStrategyRoadmap(strategyState) : null
+  const selectedStrategy = strategyState?.selectedStrategy
   const [learner, setLearner] = useState(initialLearner)
-  const [roadmap, setRoadmap] = useState(initialRoadmap)
   const [replanOpen, setReplanOpen] = useState(false)
   const [replanPending, setReplanPending] = useState(false)
   const [replanError, setReplanError] = useState('')
-  const [replanSummary, setReplanSummary] = useState(activeState?.replanSummary ?? null)
+  const [replanSummary, setReplanSummary] = useState(() => strategyState?.summaries?.[selectedStrategy] ?? activeState?.replanSummary ?? null)
   const [explanationContext, setExplanationContext] = useState(null)
   const [explanation, setExplanation] = useState(null)
   const [explanationError, setExplanationError] = useState('')
   const [explanationLoading, setExplanationLoading] = useState(false)
-  const memoryContext = learner && roadmap && generatedAt ? { learner, roadmap, generatedAt } : null
+  const displayLearner = learner && roadmap ? { ...learner, hours: roadmap.weeklyHours, timeline: roadmap.timeline } : learner
+  const memoryContext = displayLearner && roadmap && generatedAt ? { learner: displayLearner, roadmap, generatedAt } : null
   const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
 
-  if (!learner || !roadmap || !memory || !memoryContext) {
+  if (!displayLearner || !roadmap || !memory || !memoryContext || !strategyState) {
     return (
       <div className="roadmap-page roadmap-empty-state">
         <p className="roadmap-kicker">NO ROADMAP FOUND</p>
@@ -62,6 +68,12 @@ function RoadmapPage() {
     }
   }
 
+  function handleStrategyChange(strategy) {
+    const nextState = selectStrategy(strategyState, strategy)
+    setStrategyState(nextState)
+    setReplanSummary(nextState.summaries?.[strategy] ?? null)
+  }
+
   const completedSkillSet = new Set(memory.completedSkillIds)
   const completedMilestoneSet = new Set(memory.completedMilestoneIds)
   const completedSkills = roadmap.phases.flatMap((phase) => phase.skills.filter((_, index) => completedSkillSet.has(getSkillId(phase.id, index))))
@@ -71,10 +83,10 @@ function RoadmapPage() {
     setReplanPending(true)
     setReplanError('')
     try {
-      const revisedRoadmap = await requestReplan({ learner, roadmap, memory, constraints })
+      const revisedRoadmap = await requestReplan({ learner: displayLearner, roadmap, memory, constraints })
       const updatedLearner = { ...learner, hours: constraints.weeklyHours, timeline: constraints.timeline }
       const summary = {
-        whatChanged: `The plan was rebalanced from ${learner.hours} to ${constraints.weeklyHours} weekly hours.`,
+        whatChanged: `The plan was rebalanced from ${displayLearner.hours} to ${constraints.weeklyHours} weekly hours.`,
         why: constraints.note ? `${constraints.mainDifficulty}: ${constraints.note}` : constraints.mainDifficulty,
         timeline: constraints.timeline,
         weeklyHours: constraints.weeklyHours,
@@ -83,7 +95,7 @@ function RoadmapPage() {
       }
       setReplanSummary(summary)
       setLearner(updatedLearner)
-      setRoadmap(revisedRoadmap)
+      setStrategyState(storeReplannedStrategy(strategyState, selectedStrategy, revisedRoadmap, summary))
       setMemory((current) => updateLearnerConstraints(current, updatedLearner, constraints.weeklyHours))
       const replannedState = storeReplannedRoadmap({ learner: updatedLearner, roadmap: revisedRoadmap, generationId, generatedAt, replanSummary: summary })
       navigate('/roadmap', { replace: true, state: replannedState })
@@ -104,7 +116,7 @@ function RoadmapPage() {
         generationId: generationId ?? generatedAt,
         itemId: context.itemId,
         request: {
-          learnerGoal: learner.goal,
+          learnerGoal: displayLearner.goal,
           currentPhaseTitle: context.phaseTitle,
           selectedItem: context.selectedItem,
           previousItem: context.previousItem,
@@ -127,10 +139,11 @@ function RoadmapPage() {
   return (
     <div className="roadmap-page">
       <RoadmapHeader goal={roadmap.goal} />
-      <LearnerSummary learner={learner} roadmap={roadmap} />
+      <LearnerSummary learner={displayLearner} roadmap={roadmap} />
+      <RoadmapStrategySelector comparisons={getStrategyComparisons(strategyState)} onChange={handleStrategyChange} selectedStrategy={selectedStrategy} />
       {replanSummary && <ReplanSummary summary={replanSummary} />}
       <ProgressOverview currentPhase={currentPhaseIndex + 1} phaseCount={roadmap.phases.length} progress={progress} />
-      <div className="roadmap-content-grid">
+      <div className="roadmap-content-grid roadmap-variant-transition" key={`timeline-${selectedStrategy}`}>
         <RoadmapTimeline memory={memory} onExplain={handleExplain} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} />
         <aside className="roadmap-sidebar">
           <CriticReviewCard review={roadmap.criticReview} />
@@ -145,12 +158,12 @@ function RoadmapPage() {
           </div>
         </aside>
       </div>
-      <section className="projects-section">
+      <section className="projects-section roadmap-variant-transition" key={`projects-${selectedStrategy}`}>
         <div className="roadmap-section-heading"><div><span>▣</span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
         <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
       <RoadmapActions onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
-      {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={learner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
+      {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={displayLearner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
       {explanationContext && <ExplanationPanel error={explanationError} explanation={explanation} item={explanationContext.selectedItem} loading={explanationLoading} onClose={() => setExplanationContext(null)} onRetry={() => loadExplanation(explanationContext)} />}
     </div>
   )

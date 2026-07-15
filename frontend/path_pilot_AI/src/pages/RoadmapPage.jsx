@@ -1,11 +1,14 @@
+import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import CriticReviewCard from '../components/roadmap/CriticReviewCard.jsx'
 import LearnerSummary from '../components/roadmap/LearnerSummary.jsx'
 import ProjectCard from '../components/roadmap/ProjectCard.jsx'
+import ProgressOverview from '../components/roadmap/ProgressOverview.jsx'
 import RoadmapActions from '../components/roadmap/RoadmapActions.jsx'
 import RoadmapHeader from '../components/roadmap/RoadmapHeader.jsx'
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
 import { getStoredRoadmap, hasActiveGenerationAttempt } from '../lib/roadmapSession.js'
+import { getProgress, loadLearnerMemory, resetLearnerProgress, toggleCompletion } from '../lib/learnerMemory.js'
 import '../styles/roadmap.css'
 
 function RoadmapPage() {
@@ -14,8 +17,11 @@ function RoadmapPage() {
   const fallbackState = hasActiveGenerationAttempt() ? null : getStoredRoadmap()
   const learner = navigationState?.learner ?? fallbackState?.learner
   const roadmap = navigationState?.roadmap ?? fallbackState?.roadmap
+  const generatedAt = navigationState?.generatedAt ?? fallbackState?.generatedAt
+  const memoryContext = learner && roadmap && generatedAt ? { learner, roadmap, generatedAt } : null
+  const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
 
-  if (!learner || !roadmap) {
+  if (!learner || !roadmap || !memory || !memoryContext) {
     return (
       <div className="roadmap-page roadmap-empty-state">
         <p className="roadmap-kicker">NO ROADMAP FOUND</p>
@@ -26,12 +32,26 @@ function RoadmapPage() {
     )
   }
 
+  const progress = getProgress(memory, roadmap)
+  const currentPhaseIndex = roadmap.phases.findIndex((phase) => phase.id === memory.currentPhase)
+
+  function handleToggle(type, id) {
+    setMemory((current) => toggleCompletion(current, roadmap, type, id))
+  }
+
+  function handleResetProgress() {
+    if (window.confirm('Reset all completed skills and milestones for this roadmap?')) {
+      setMemory(resetLearnerProgress(memoryContext))
+    }
+  }
+
   return (
     <div className="roadmap-page">
       <RoadmapHeader goal={roadmap.goal} />
       <LearnerSummary learner={learner} roadmap={roadmap} />
+      <ProgressOverview currentPhase={currentPhaseIndex + 1} phaseCount={roadmap.phases.length} progress={progress} />
       <div className="roadmap-content-grid">
-        <RoadmapTimeline phases={roadmap.phases} />
+        <RoadmapTimeline memory={memory} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} />
         <aside className="roadmap-sidebar">
           <CriticReviewCard review={roadmap.criticReview} />
           <div className="skill-vault-card">
@@ -49,7 +69,7 @@ function RoadmapPage() {
         <div className="roadmap-section-heading"><div><span>▣</span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
         <div className="project-grid">{roadmap.projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
       </section>
-      <RoadmapActions />
+      <RoadmapActions onResetProgress={handleResetProgress} />
     </div>
   )
 }

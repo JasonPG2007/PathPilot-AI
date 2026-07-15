@@ -1,5 +1,5 @@
 .roadmap-page { min-height: 60rem; padding: 2.5rem 1rem 7rem; background: linear-gradient(180deg, #fbfaff, #f8f7fd); }
-.roadmap-header, .learner-summary, .roadmap-content-grid, .projects-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
+.roadmap-header, .learner-summary, .roadmap-progress, .roadmap-content-grid, .projects-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
 .roadmap-breadcrumb { margin-bottom: 1.4rem; color: #8a8e9d; font-size: 0.7rem; }
 .roadmap-breadcrumb span { margin-inline: 0.4rem; color: #b3b5c0; }
 .roadmap-header > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
@@ -13,6 +13,14 @@
 .learner-summary div > div > span { display: block; margin-bottom: 0.3rem; color: #858998; font-size: 0.58rem; font-weight: 700; text-transform: uppercase; }
 .learner-summary strong { font-size: 0.75rem; }
 .confidence-ring { display: grid; width: 2.4rem; height: 2.4rem; place-items: center; border-radius: 50%; color: #168564; background: radial-gradient(circle closest-side, #fff 74%, transparent 76%), conic-gradient(var(--color-mint) 94%, #e1eee9 0); font-size: 0.62rem; font-weight: 800; }
+.roadmap-progress { display: grid; grid-template-columns: auto minmax(10rem, 1fr) auto; align-items: center; gap: 1rem; margin-top: 1rem; padding: 0.9rem 1.2rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
+.roadmap-progress > div:first-child { display: flex; align-items: baseline; gap: 0.45rem; }
+.roadmap-progress > div:first-child span, .roadmap-progress p { color: var(--color-text-muted); font-size: 0.62rem; }
+.roadmap-progress strong { color: var(--color-primary); font-size: 1rem; }
+.roadmap-progress-track { overflow: hidden; height: 0.4rem; border-radius: 99rem; background: #e9e6f3; }
+.roadmap-progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--color-primary), var(--color-mint)); transition: width 180ms ease; }
+.roadmap-progress p { margin: 0; color: #454b59; font-weight: 700; white-space: nowrap; }
+.roadmap-progress small { display: block; margin-top: 0.2rem; color: var(--color-text-muted); font-size: 0.52rem; font-weight: 500; }
 .roadmap-content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.5rem; margin-top: 3.5rem; align-items: start; }
 .roadmap-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
 .roadmap-section-heading > div { display: flex; align-items: center; gap: 0.65rem; }
@@ -24,6 +32,7 @@
 .roadmap-phase { position: relative; margin-bottom: 1.35rem; }
 .phase-number { position: absolute; top: 1.2rem; left: -2.7rem; z-index: 1; display: grid; width: 2rem; height: 2rem; place-items: center; border: 4px solid #f9f8fd; border-radius: 50%; color: #fff; background: var(--color-primary); font-size: 0.7rem; font-weight: 800; }
 .phase-card { padding: 1.4rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
+.phase-card--current { border-color: color-mix(in srgb, var(--color-primary) 38%, white); box-shadow: 0 0 0 2px var(--color-primary-soft), var(--shadow-sm); }
 .phase-card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
 .phase-card-heading p { margin-bottom: 0.3rem; color: var(--color-primary); font-size: 0.55rem; font-weight: 800; }
 .phase-card h3 { margin: 0; font-size: 1rem; }
@@ -35,7 +44,10 @@
 .phase-details { display: grid; grid-template-columns: 1fr 13rem; align-items: end; gap: 1rem; }
 .phase-card h4, .milestone-list h4 { margin: 0 0 0.6rem; color: #555b69; font-size: 0.55rem; letter-spacing: 0.05em; text-transform: uppercase; }
 .phase-skills { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.skill-badge { padding: 0.32rem 0.5rem; border-radius: 0.3rem; color: var(--color-primary); background: #f3f1ff; font-size: 0.58rem; font-weight: 700; }
+.skill-badge { display: inline-flex; align-items: center; gap: 0.35rem; padding: 0.28rem 0.35rem 0.28rem 0.5rem; border-radius: 0.3rem; color: var(--color-primary); background: #f3f1ff; font-size: 0.58rem; font-weight: 700; }
+.skill-badge--complete > span { text-decoration: line-through; opacity: 0.65; }
+.skill-badge button, .milestone-list button { padding: 0.2rem 0.32rem; border: 0; border-radius: 0.25rem; color: var(--color-primary); background: rgba(255,255,255,.8); font: inherit; font-size: 0.48rem; cursor: pointer; }
+.skill-badge button:focus-visible, .milestone-list button:focus-visible, .reset-progress-action:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .phase-project { display: flex; min-height: 4rem; align-items: center; gap: 0.7rem; padding: 0.7rem; border: 1px solid var(--color-border-soft); border-radius: 0.5rem; background: #fcfcfe; }
 .phase-project > span { color: var(--color-primary); font-size: 1.1rem; }
 .phase-project small, .phase-project strong { display: block; }
@@ -45,8 +57,11 @@
 .phase-project--blue > span { color: #3871bf; }
 .milestone-list { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-soft); }
 .milestone-list ul { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.6rem; margin: 0; padding: 0; list-style: none; }
-.milestone-list li { display: flex; gap: 0.35rem; color: var(--color-text-muted); font-size: 0.57rem; line-height: 1.45; }
+.milestone-list li { display: grid; grid-template-columns: auto 1fr; align-items: start; gap: 0.35rem; color: var(--color-text-muted); font-size: 0.57rem; line-height: 1.45; }
 .milestone-list li span { color: var(--color-mint); }
+.milestone-list li > span:nth-child(2) { color: inherit; }
+.milestone-list li.is-complete > span:nth-child(2) { text-decoration: line-through; opacity: 0.65; }
+.milestone-list button { grid-column: 2; justify-self: start; margin-top: 0.15rem; border: 1px solid var(--color-border-soft); }
 .roadmap-sidebar { display: flex; flex-direction: column; gap: 1rem; }
 .critic-review-card, .skill-vault-card { padding: 1.3rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
 .critic-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
@@ -85,6 +100,7 @@
 .roadmap-actions > div { display: flex; justify-content: center; flex-wrap: wrap; gap: 0.7rem; margin-top: 1.5rem; }
 .roadmap-actions .button { min-height: 2.7rem; font-size: 0.7rem; }
 .text-action { align-self: center; padding: 0.7rem; color: var(--color-text-muted); font-size: 0.7rem; }
+.reset-progress-action { border: 0; background: transparent; cursor: pointer; }
 .roadmap-actions .download-message { min-height: 1rem; margin-top: 0.8rem; color: #168564; }
 .roadmap-empty-state { display: flex; min-height: 40rem; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
 .roadmap-empty-state h1 { margin-bottom: 1rem; }
@@ -109,4 +125,6 @@
   .timeline-list::before { left: 0.75rem; }
   .phase-number { left: -2.2rem; }
   .roadmap-section-heading { align-items: flex-start; flex-direction: column; }
+  .roadmap-progress { grid-template-columns: 1fr; }
+  .roadmap-progress p { white-space: normal; }
 }

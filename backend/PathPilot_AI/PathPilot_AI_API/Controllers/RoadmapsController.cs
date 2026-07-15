@@ -10,11 +10,13 @@ public sealed class RoadmapsController : ControllerBase
 {
     private readonly IRoadmapService _roadmapService;
     private readonly MockRoadmapService _mockRoadmapService;
+    private readonly IRoadmapExplanationService _explanationService;
 
-    public RoadmapsController(IRoadmapService roadmapService, MockRoadmapService mockRoadmapService)
+    public RoadmapsController(IRoadmapService roadmapService, MockRoadmapService mockRoadmapService, IRoadmapExplanationService explanationService)
     {
         _roadmapService = roadmapService;
         _mockRoadmapService = mockRoadmapService;
+        _explanationService = explanationService;
     }
 
     [HttpPost("generate")]
@@ -47,5 +49,27 @@ public sealed class RoadmapsController : ControllerBase
         CancellationToken cancellationToken)
     {
         return Ok(await _mockRoadmapService.ReplanAsync(request, cancellationToken));
+    }
+
+    [HttpPost("explain")]
+    [ProducesResponseType<RoadmapExplanationResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+    public async Task<ActionResult<RoadmapExplanationResponse>> Explain(
+        [FromBody] ExplainRoadmapRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Ok(await _explanationService.ExplainAsync(request, cancellationToken));
+        }
+        catch (RoadmapGenerationException exception)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Roadmap explanation failed.",
+                detail: exception.Message,
+                instance: HttpContext.Request.Path);
+        }
     }
 }

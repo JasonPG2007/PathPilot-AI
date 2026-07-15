@@ -37,6 +37,15 @@ builder.Services.AddHttpClient<OpenAIResponsesClient>(client =>
 });
 builder.Services.AddScoped<MockRoadmapService>();
 builder.Services.AddScoped<OpenAIRoadmapService>();
+builder.Services.AddScoped<MockRoadmapExplanationService>();
+builder.Services.AddScoped<OpenAIRoadmapExplanationService>();
+builder.Services.AddScoped<IRoadmapExplanationService>(services =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    return string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"])
+        ? services.GetRequiredService<MockRoadmapExplanationService>()
+        : services.GetRequiredService<OpenAIRoadmapExplanationService>();
+});
 builder.Services.AddScoped<IRoadmapService>(services =>
 {
     var configuration = services.GetRequiredService<IConfiguration>();

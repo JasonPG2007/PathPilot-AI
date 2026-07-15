@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import CriticReviewCard from '../components/roadmap/CriticReviewCard.jsx'
+import ExplanationPanel from '../components/roadmap/ExplanationPanel.jsx'
 import LearnerSummary from '../components/roadmap/LearnerSummary.jsx'
 import ProjectCard from '../components/roadmap/ProjectCard.jsx'
 import ProgressOverview from '../components/roadmap/ProgressOverview.jsx'
@@ -12,6 +13,7 @@ import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
 import { getMostRecentRoadmap, getStoredRoadmap, hasActiveGenerationAttempt, storeReplannedRoadmap } from '../lib/roadmapSession.js'
 import { getMilestoneId, getProgress, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
 import { requestReplan } from '../services/replanApi.js'
+import { requestExplanation } from '../services/explanationApi.js'
 import '../styles/roadmap.css'
 
 function RoadmapPage() {
@@ -29,6 +31,10 @@ function RoadmapPage() {
   const [replanPending, setReplanPending] = useState(false)
   const [replanError, setReplanError] = useState('')
   const [replanSummary, setReplanSummary] = useState(activeState?.replanSummary ?? null)
+  const [explanationContext, setExplanationContext] = useState(null)
+  const [explanation, setExplanation] = useState(null)
+  const [explanationError, setExplanationError] = useState('')
+  const [explanationLoading, setExplanationLoading] = useState(false)
   const memoryContext = learner && roadmap && generatedAt ? { learner, roadmap, generatedAt } : null
   const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
 
@@ -89,6 +95,35 @@ function RoadmapPage() {
     }
   }
 
+  async function loadExplanation(context) {
+    setExplanationLoading(true)
+    setExplanationError('')
+    setExplanation(null)
+    try {
+      const result = await requestExplanation({
+        generationId: generationId ?? generatedAt,
+        itemId: context.itemId,
+        request: {
+          learnerGoal: learner.goal,
+          currentPhaseTitle: context.phaseTitle,
+          selectedItem: context.selectedItem,
+          previousItem: context.previousItem,
+          nextItem: context.nextItem,
+        },
+      })
+      setExplanation(result)
+    } catch (error) {
+      setExplanationError(error.message)
+    } finally {
+      setExplanationLoading(false)
+    }
+  }
+
+  function handleExplain(context) {
+    setExplanationContext(context)
+    loadExplanation(context)
+  }
+
   return (
     <div className="roadmap-page">
       <RoadmapHeader goal={roadmap.goal} />
@@ -96,7 +131,7 @@ function RoadmapPage() {
       {replanSummary && <ReplanSummary summary={replanSummary} />}
       <ProgressOverview currentPhase={currentPhaseIndex + 1} phaseCount={roadmap.phases.length} progress={progress} />
       <div className="roadmap-content-grid">
-        <RoadmapTimeline memory={memory} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} />
+        <RoadmapTimeline memory={memory} onExplain={handleExplain} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} />
         <aside className="roadmap-sidebar">
           <CriticReviewCard review={roadmap.criticReview} />
           <div className="skill-vault-card">
@@ -112,10 +147,11 @@ function RoadmapPage() {
       </div>
       <section className="projects-section">
         <div className="roadmap-section-heading"><div><span>▣</span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
-        <div className="project-grid">{roadmap.projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
+        <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
       <RoadmapActions onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
       {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={learner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
+      {explanationContext && <ExplanationPanel error={explanationError} explanation={explanation} item={explanationContext.selectedItem} loading={explanationLoading} onClose={() => setExplanationContext(null)} onRetry={() => loadExplanation(explanationContext)} />}
     </div>
   )
 }

@@ -1,13 +1,14 @@
 import { useState } from 'react'
+import { getReplanTimelineOptions, normalizeReplanTimelineOption } from '../../lib/timelineFormat.js'
 
-const timelines = ['3 Months (Intensive)', '6 Months (Balanced)', '9 Months (Flexible)', '12 Months (Relaxed)']
 const difficulties = ['Time constraints', 'Concept difficulty', 'Keeping consistency', 'Project scope', 'Other']
 
 function ReplanJourneyPanel({ completedMilestones, completedSkills, error, learner, onClose, onSubmit, submitting }) {
   const [weeklyHours, setWeeklyHours] = useState(learner.hours)
-  const [timeline, setTimeline] = useState(learner.timeline)
+  const [timeline, setTimeline] = useState(() => normalizeReplanTimelineOption(learner.timeline))
   const [mainDifficulty, setMainDifficulty] = useState(difficulties[0])
   const [note, setNote] = useState('')
+  const timelines = getReplanTimelineOptions(learner.timeline)
 
   function handleSubmit(event) {
     event.preventDefault()

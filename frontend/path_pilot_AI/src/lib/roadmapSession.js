@@ -30,8 +30,7 @@ export function storeGeneratedRoadmap({ learner, roadmap, generationId, generate
   return storedState
 }
 
-export function storeReplannedRoadmap({ learner, roadmap, generationId, generatedAt, replanSummary }) {
-  const replannedAt = new Date().toISOString()
+export function storeReplannedRoadmap({ learner, roadmap, generationId, generatedAt, replanSummary, replannedAt = new Date().toISOString(), strategy }) {
   const storedState = {
     learner,
     roadmap,
@@ -40,6 +39,7 @@ export function storeReplannedRoadmap({ learner, roadmap, generationId, generate
     generatedAt,
     replannedAt,
     replanSummary,
+    strategy,
     updatedWeeklyHours: roadmap.weeklyHours,
     updatedTimeline: roadmap.timeline,
     updatedRiskLevel: roadmap.criticReview.riskLevel,

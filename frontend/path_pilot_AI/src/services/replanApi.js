@@ -1,4 +1,6 @@
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
+import { restoreCompletedRoadmapItems } from './roadmapVariants.js'
+
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
 
 function toLearnerProfile(learner) {
   return {
@@ -23,13 +25,18 @@ function normalizeRoadmap(response) {
   }
 }
 
-export async function requestReplan({ learner, roadmap, memory, constraints }) {
-  const response = await fetch(`${API_BASE_URL}/api/roadmaps/replan`, {
+export async function requestReplan({ learner, roadmap, canonicalRoadmap = roadmap, memory, constraints, fetchImpl = fetch }) {
+  const preflight = restoreCompletedRoadmapItems(roadmap, canonicalRoadmap, memory)
+  if (!preflight.valid) {
+    if (import.meta.env?.DEV) console.info('[PathPilot] Replan preservation preflight failed.')
+    throw new Error(preflight.reason)
+  }
+  const response = await fetchImpl(`${API_BASE_URL}/api/roadmaps/replan`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       learnerProfile: toLearnerProfile(learner),
-      currentRoadmap: roadmap,
+      currentRoadmap: preflight.roadmap,
       learnerProgress: {
         currentPhase: memory.currentPhase,
         completedSkillIds: memory.completedSkillIds,

@@ -13,9 +13,10 @@ import RoadmapStrategySelector from '../components/roadmap/RoadmapStrategySelect
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
 import { getMostRecentRoadmap, getStoredRoadmap, hasActiveGenerationAttempt, storeReplannedRoadmap } from '../lib/roadmapSession.js'
 import { getMilestoneId, getProgress, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
+import { formatTimeline } from '../lib/timelineFormat.js'
 import { requestReplan } from '../services/replanApi.js'
 import { requestExplanation } from '../services/explanationApi.js'
-import { getStrategyComparisons, getStrategyRoadmap, loadStrategyState, selectStrategy, storeReplannedStrategy } from '../services/roadmapVariants.js'
+import { getStrategyComparisons, getStrategyRoadmap, getStrategySummary, loadStrategyState, selectStrategy, storeReplannedStrategy } from '../services/roadmapVariants.js'
 import '../styles/roadmap.css'
 
 function RoadmapPage() {
@@ -28,19 +29,19 @@ function RoadmapPage() {
   const generatedAt = activeState?.generatedAt
   const generationId = activeState?.generationId
   const journeyId = generationId ?? generatedAt
-  const [strategyState, setStrategyState] = useState(() => journeyId && initialRoadmap ? loadStrategyState(journeyId, initialRoadmap) : null)
+  const [strategyState, setStrategyState] = useState(() => journeyId && initialRoadmap ? loadStrategyState({ journeyId, canonicalBalancedRoadmap: initialRoadmap, generatedAt, sessionState: activeState }) : null)
   const roadmap = strategyState ? getStrategyRoadmap(strategyState) : null
   const selectedStrategy = strategyState?.selectedStrategy
+  const replanSummary = strategyState ? getStrategySummary(strategyState) : null
   const [learner, setLearner] = useState(initialLearner)
   const [replanOpen, setReplanOpen] = useState(false)
   const [replanPending, setReplanPending] = useState(false)
   const [replanError, setReplanError] = useState('')
-  const [replanSummary, setReplanSummary] = useState(() => strategyState?.summaries?.[selectedStrategy] ?? activeState?.replanSummary ?? null)
   const [explanationContext, setExplanationContext] = useState(null)
   const [explanation, setExplanation] = useState(null)
   const [explanationError, setExplanationError] = useState('')
   const [explanationLoading, setExplanationLoading] = useState(false)
-  const displayLearner = learner && roadmap ? { ...learner, hours: roadmap.weeklyHours, timeline: roadmap.timeline } : learner
+  const displayLearner = learner && roadmap ? { ...learner, hours: roadmap.weeklyHours, timeline: formatTimeline(roadmap.timeline) } : learner
   const memoryContext = displayLearner && roadmap && generatedAt ? { learner: displayLearner, roadmap, generatedAt } : null
   const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
 
@@ -71,7 +72,6 @@ function RoadmapPage() {
   function handleStrategyChange(strategy) {
     const nextState = selectStrategy(strategyState, strategy)
     setStrategyState(nextState)
-    setReplanSummary(nextState.summaries?.[strategy] ?? null)
   }
 
   const completedSkillSet = new Set(memory.completedSkillIds)
@@ -83,7 +83,7 @@ function RoadmapPage() {
     setReplanPending(true)
     setReplanError('')
     try {
-      const revisedRoadmap = await requestReplan({ learner: displayLearner, roadmap, memory, constraints })
+      const revisedRoadmap = await requestReplan({ learner: displayLearner, roadmap, canonicalRoadmap: strategyState.canonicalBalancedRoadmap, memory, constraints })
       const updatedLearner = { ...learner, hours: constraints.weeklyHours, timeline: constraints.timeline }
       const summary = {
         whatChanged: `The plan was rebalanced from ${displayLearner.hours} to ${constraints.weeklyHours} weekly hours.`,
@@ -93,11 +93,11 @@ function RoadmapPage() {
         riskLevel: revisedRoadmap.criticReview.riskLevel,
         confidenceScore: revisedRoadmap.feasibilityScore,
       }
-      setReplanSummary(summary)
+      const replannedAt = new Date().toISOString()
       setLearner(updatedLearner)
-      setStrategyState(storeReplannedStrategy(strategyState, selectedStrategy, revisedRoadmap, summary))
+      setStrategyState(storeReplannedStrategy(strategyState, selectedStrategy, revisedRoadmap, summary, replannedAt))
       setMemory((current) => updateLearnerConstraints(current, updatedLearner, constraints.weeklyHours))
-      const replannedState = storeReplannedRoadmap({ learner: updatedLearner, roadmap: revisedRoadmap, generationId, generatedAt, replanSummary: summary })
+      const replannedState = storeReplannedRoadmap({ learner: updatedLearner, roadmap: revisedRoadmap, generationId, generatedAt, replanSummary: summary, replannedAt, strategy: selectedStrategy })
       navigate('/roadmap', { replace: true, state: replannedState })
       setReplanOpen(false)
     } catch (error) {

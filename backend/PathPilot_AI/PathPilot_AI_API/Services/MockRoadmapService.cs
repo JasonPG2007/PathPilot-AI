@@ -4,7 +4,7 @@ namespace PathPilot_AI_API.Services;
 
 public sealed class MockRoadmapService : IRoadmapService
 {
-    public RoadmapResponse Generate(GenerateRoadmapRequest request)
+    public Task<RoadmapResponse> GenerateAsync(GenerateRoadmapRequest request, CancellationToken cancellationToken)
     {
         var goal = request.Goal.Trim();
         var focus = GetFocus(goal);
@@ -16,7 +16,7 @@ public sealed class MockRoadmapService : IRoadmapService
             .ToArray();
         var prerequisites = existingSkills.Length > 0 ? existingSkills : ["Basic digital literacy"];
 
-        return new RoadmapResponse(
+        var roadmap = new RoadmapResponse(
             Goal: goal,
             Summary: $"A practical {request.Timeline.ToLowerInvariant()} roadmap for a {request.CurrentLevel.ToLowerInvariant()} learner pursuing {goalPhrases.Pursuit} through {request.LearningStyle.ToLowerInvariant()}-first study.",
             Timeline: request.Timeline,
@@ -74,6 +74,8 @@ public sealed class MockRoadmapService : IRoadmapService
                 new SuggestedProject(2, focus.AppliedProject, "Applied", "Create a realistic end-to-end workflow with documentation and tests.", "teal"),
                 new SuggestedProject(3, focus.CapstoneProject, "Capstone", $"Show readiness for {goalPhrases.Role} with a polished final system.", "blue")
             ]);
+
+        return Task.FromResult(roadmap);
     }
 
     private static GoalPhrases GetGoalPhrases(string goal)

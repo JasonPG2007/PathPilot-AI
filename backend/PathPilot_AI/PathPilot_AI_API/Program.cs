@@ -30,7 +30,20 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
     });
 });
-builder.Services.AddScoped<IRoadmapService, MockRoadmapService>();
+builder.Services.AddHttpClient<OpenAIResponsesClient>(client =>
+{
+    client.BaseAddress = new Uri("https://api.openai.com/v1/");
+    client.Timeout = TimeSpan.FromSeconds(90);
+});
+builder.Services.AddScoped<MockRoadmapService>();
+builder.Services.AddScoped<OpenAIRoadmapService>();
+builder.Services.AddScoped<IRoadmapService>(services =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    return string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"])
+        ? services.GetRequiredService<MockRoadmapService>()
+        : services.GetRequiredService<OpenAIRoadmapService>();
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 

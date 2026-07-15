@@ -18,8 +18,22 @@ public sealed class RoadmapsController : ControllerBase
     [HttpPost("generate")]
     [ProducesResponseType<RoadmapResponse>(StatusCodes.Status200OK)]
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
-    public ActionResult<RoadmapResponse> Generate([FromBody] GenerateRoadmapRequest request)
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+    public async Task<ActionResult<RoadmapResponse>> Generate(
+        [FromBody] GenerateRoadmapRequest request,
+        CancellationToken cancellationToken)
     {
-        return Ok(_roadmapService.Generate(request));
+        try
+        {
+            return Ok(await _roadmapService.GenerateAsync(request, cancellationToken));
+        }
+        catch (RoadmapGenerationException exception)
+        {
+            return Problem(
+                statusCode: StatusCodes.Status502BadGateway,
+                title: "Roadmap generation failed.",
+                detail: exception.Message,
+                instance: HttpContext.Request.Path);
+        }
     }
 }

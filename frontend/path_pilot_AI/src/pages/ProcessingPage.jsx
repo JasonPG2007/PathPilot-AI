@@ -85,7 +85,7 @@ function ProcessingPage() {
 
       <section className="workflow-panel" aria-label="Roadmap generation progress">
         <div className="overall-progress">
-          <div><span aria-live="polite">{stage === 3 && !roadmap ? 'Finalizing your roadmap with the API' : currentStage.status}</span><strong>{currentStage.progress}%</strong></div>
+          <div><span aria-live="polite">{animationCompleted && !roadmap ? 'Finalizing your personalized roadmap...' : currentStage.status}</span><strong>{currentStage.progress}%</strong></div>
           <div aria-label={`${currentStage.progress}% complete`} aria-valuemax="100" aria-valuemin="0" aria-valuenow={currentStage.progress} className="progress-track" role="progressbar"><span style={{ width: `${currentStage.progress}%` }} /></div>
         </div>
 
@@ -100,7 +100,7 @@ function ProcessingPage() {
 
         <div className={`completion-message${stage === 3 ? ' completion-message--visible' : ''}`} aria-live="polite">
           <span>✓</span>
-          <div><strong>{roadmap ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{roadmap ? 'Opening your personalized learning journey…' : 'Waiting for the roadmap service…'}</p></div>
+          <div><strong>{roadmap ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{roadmap ? 'Opening your personalized learning journey…' : animationCompleted ? 'Finalizing your personalized roadmap...' : 'The agents are refining your learning journey…'}</p></div>
         </div>
       </section>
       <p className="processing-note">Please keep this page open. You’ll be redirected automatically.</p>

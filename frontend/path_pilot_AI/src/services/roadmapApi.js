@@ -1,5 +1,5 @@
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
-const REQUEST_TIMEOUT_MS = 12000
+const REQUEST_TIMEOUT_MS = 120000
 
 function toApiRequest(learner) {
   return {

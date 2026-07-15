@@ -9,10 +9,12 @@ namespace PathPilot_AI_API.Controllers;
 public sealed class RoadmapsController : ControllerBase
 {
     private readonly IRoadmapService _roadmapService;
+    private readonly MockRoadmapService _mockRoadmapService;
 
-    public RoadmapsController(IRoadmapService roadmapService)
+    public RoadmapsController(IRoadmapService roadmapService, MockRoadmapService mockRoadmapService)
     {
         _roadmapService = roadmapService;
+        _mockRoadmapService = mockRoadmapService;
     }
 
     [HttpPost("generate")]
@@ -35,5 +37,15 @@ public sealed class RoadmapsController : ControllerBase
                 detail: exception.Message,
                 instance: HttpContext.Request.Path);
         }
+    }
+
+    [HttpPost("replan")]
+    [ProducesResponseType<RoadmapResponse>(StatusCodes.Status200OK)]
+    [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<RoadmapResponse>> Replan(
+        [FromBody] ReplanRoadmapRequest request,
+        CancellationToken cancellationToken)
+    {
+        return Ok(await _mockRoadmapService.ReplanAsync(request, cancellationToken));
     }
 }

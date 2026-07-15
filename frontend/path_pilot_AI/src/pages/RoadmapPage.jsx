@@ -1,23 +1,34 @@
 import { useState } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import CriticReviewCard from '../components/roadmap/CriticReviewCard.jsx'
 import LearnerSummary from '../components/roadmap/LearnerSummary.jsx'
 import ProjectCard from '../components/roadmap/ProjectCard.jsx'
 import ProgressOverview from '../components/roadmap/ProgressOverview.jsx'
+import ReplanJourneyPanel from '../components/roadmap/ReplanJourneyPanel.jsx'
+import ReplanSummary from '../components/roadmap/ReplanSummary.jsx'
 import RoadmapActions from '../components/roadmap/RoadmapActions.jsx'
 import RoadmapHeader from '../components/roadmap/RoadmapHeader.jsx'
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
-import { getStoredRoadmap, hasActiveGenerationAttempt } from '../lib/roadmapSession.js'
-import { getProgress, loadLearnerMemory, resetLearnerProgress, toggleCompletion } from '../lib/learnerMemory.js'
+import { getMostRecentRoadmap, getStoredRoadmap, hasActiveGenerationAttempt, storeReplannedRoadmap } from '../lib/roadmapSession.js'
+import { getMilestoneId, getProgress, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
+import { requestReplan } from '../services/replanApi.js'
 import '../styles/roadmap.css'
 
 function RoadmapPage() {
   const location = useLocation()
-  const navigationState = location.state?.source === 'api' ? location.state : null
-  const fallbackState = hasActiveGenerationAttempt() ? null : getStoredRoadmap()
-  const learner = navigationState?.learner ?? fallbackState?.learner
-  const roadmap = navigationState?.roadmap ?? fallbackState?.roadmap
-  const generatedAt = navigationState?.generatedAt ?? fallbackState?.generatedAt
+  const navigate = useNavigate()
+  const storedState = hasActiveGenerationAttempt() ? null : getStoredRoadmap()
+  const activeState = getMostRecentRoadmap(location.state, storedState)
+  const initialLearner = activeState?.learner
+  const initialRoadmap = activeState?.roadmap
+  const generatedAt = activeState?.generatedAt
+  const generationId = activeState?.generationId
+  const [learner, setLearner] = useState(initialLearner)
+  const [roadmap, setRoadmap] = useState(initialRoadmap)
+  const [replanOpen, setReplanOpen] = useState(false)
+  const [replanPending, setReplanPending] = useState(false)
+  const [replanError, setReplanError] = useState('')
+  const [replanSummary, setReplanSummary] = useState(activeState?.replanSummary ?? null)
   const memoryContext = learner && roadmap && generatedAt ? { learner, roadmap, generatedAt } : null
   const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
 
@@ -45,10 +56,44 @@ function RoadmapPage() {
     }
   }
 
+  const completedSkillSet = new Set(memory.completedSkillIds)
+  const completedMilestoneSet = new Set(memory.completedMilestoneIds)
+  const completedSkills = roadmap.phases.flatMap((phase) => phase.skills.filter((_, index) => completedSkillSet.has(getSkillId(phase.id, index))))
+  const completedMilestones = roadmap.phases.flatMap((phase) => phase.milestones.filter((_, index) => completedMilestoneSet.has(getMilestoneId(phase.id, index))))
+
+  async function handleReplan(constraints) {
+    setReplanPending(true)
+    setReplanError('')
+    try {
+      const revisedRoadmap = await requestReplan({ learner, roadmap, memory, constraints })
+      const updatedLearner = { ...learner, hours: constraints.weeklyHours, timeline: constraints.timeline }
+      const summary = {
+        whatChanged: `The plan was rebalanced from ${learner.hours} to ${constraints.weeklyHours} weekly hours.`,
+        why: constraints.note ? `${constraints.mainDifficulty}: ${constraints.note}` : constraints.mainDifficulty,
+        timeline: constraints.timeline,
+        weeklyHours: constraints.weeklyHours,
+        riskLevel: revisedRoadmap.criticReview.riskLevel,
+        confidenceScore: revisedRoadmap.feasibilityScore,
+      }
+      setReplanSummary(summary)
+      setLearner(updatedLearner)
+      setRoadmap(revisedRoadmap)
+      setMemory((current) => updateLearnerConstraints(current, updatedLearner, constraints.weeklyHours))
+      const replannedState = storeReplannedRoadmap({ learner: updatedLearner, roadmap: revisedRoadmap, generationId, generatedAt, replanSummary: summary })
+      navigate('/roadmap', { replace: true, state: replannedState })
+      setReplanOpen(false)
+    } catch (error) {
+      setReplanError(error.message)
+    } finally {
+      setReplanPending(false)
+    }
+  }
+
   return (
     <div className="roadmap-page">
       <RoadmapHeader goal={roadmap.goal} />
       <LearnerSummary learner={learner} roadmap={roadmap} />
+      {replanSummary && <ReplanSummary summary={replanSummary} />}
       <ProgressOverview currentPhase={currentPhaseIndex + 1} phaseCount={roadmap.phases.length} progress={progress} />
       <div className="roadmap-content-grid">
         <RoadmapTimeline memory={memory} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} />
@@ -69,7 +114,8 @@ function RoadmapPage() {
         <div className="roadmap-section-heading"><div><span>▣</span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
         <div className="project-grid">{roadmap.projects.map((project) => <ProjectCard key={project.id} project={project} />)}</div>
       </section>
-      <RoadmapActions onResetProgress={handleResetProgress} />
+      <RoadmapActions onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
+      {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={learner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
     </div>
   )
 }

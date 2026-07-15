@@ -78,6 +78,49 @@ public sealed class MockRoadmapService : IRoadmapService
         return Task.FromResult(roadmap);
     }
 
+    public Task<RoadmapResponse> ReplanAsync(ReplanRoadmapRequest request, CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var roadmap = request.CurrentRoadmap!;
+        var constraints = request.UpdatedConstraints!;
+        var (riskLevel, score) = GetReplanRisk(constraints.WeeklyHours, constraints.MainDifficulty);
+        var workload = $"{constraints.WeeklyHours} hours/week";
+        var phases = roadmap.Phases.Select((phase, index) => phase with
+        {
+            Duration = $"Stage {index + 1} of {constraints.Timeline}",
+            WeeklyWorkload = workload
+        }).ToArray();
+
+        var revised = roadmap with
+        {
+            Summary = $"Revised for {constraints.WeeklyHours} weekly hours across {constraints.Timeline.ToLowerInvariant()}, with extra support for {constraints.MainDifficulty.ToLowerInvariant()}.",
+            Timeline = constraints.Timeline,
+            WeeklyHours = constraints.WeeklyHours,
+            FeasibilityScore = score,
+            Phases = phases,
+            CriticReview = roadmap.CriticReview with
+            {
+                RiskLevel = riskLevel,
+                Issues = [$"Primary learner difficulty: {constraints.MainDifficulty}"],
+                ChangesMade = ["Rebalanced weekly workload", "Adjusted phase pacing while preserving completed work"],
+                TimelineAdjustments = $"Updated target timeline to {constraints.Timeline}.",
+                PrerequisiteCorrections = "Completed skills and milestones remain credited in their original phases."
+            }
+        };
+
+        return Task.FromResult(revised);
+    }
+
+    private static (string RiskLevel, int Score) GetReplanRisk(int weeklyHours, string difficulty)
+    {
+        var difficultConstraint = difficulty.Contains("time", StringComparison.OrdinalIgnoreCase) ||
+            difficulty.Contains("consistency", StringComparison.OrdinalIgnoreCase);
+
+        if (weeklyHours < 6 || (weeklyHours < 10 && difficultConstraint)) return ("High", 40);
+        if (weeklyHours < 12 || difficultConstraint) return ("Medium", 68);
+        return ("Low", 86);
+    }
+
     private static GoalPhrases GetGoalPhrases(string goal)
     {
         const string BecomePrefix = "Become ";

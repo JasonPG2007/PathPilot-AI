@@ -85,6 +85,15 @@ export function resetLearnerProgress(context) {
   return persist(createMemory(context))
 }
 
+export function updateLearnerConstraints(memory, learner, weeklyHours) {
+  return persist({
+    ...memory,
+    learnerProfile: learner,
+    weeklyHours,
+    lastUpdated: new Date().toISOString(),
+  })
+}
+
 export function getProgress(memory, roadmap) {
   const trackable = getTrackableIds(roadmap)
   const completedSkills = new Set(memory.completedSkillIds)

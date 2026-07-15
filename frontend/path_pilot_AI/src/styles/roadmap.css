@@ -1,5 +1,5 @@
 .roadmap-page { min-height: 60rem; padding: 2.5rem 1rem 7rem; background: linear-gradient(180deg, #fbfaff, #f8f7fd); }
-.roadmap-header, .learner-summary, .roadmap-progress, .roadmap-content-grid, .projects-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
+.roadmap-header, .learner-summary, .roadmap-progress, .replan-summary, .roadmap-content-grid, .projects-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
 .roadmap-breadcrumb { margin-bottom: 1.4rem; color: #8a8e9d; font-size: 0.7rem; }
 .roadmap-breadcrumb span { margin-inline: 0.4rem; color: #b3b5c0; }
 .roadmap-header > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
@@ -21,6 +21,12 @@
 .roadmap-progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--color-primary), var(--color-mint)); transition: width 180ms ease; }
 .roadmap-progress p { margin: 0; color: #454b59; font-weight: 700; white-space: nowrap; }
 .roadmap-progress small { display: block; margin-top: 0.2rem; color: var(--color-text-muted); font-size: 0.52rem; font-weight: 500; }
+.replan-summary { margin-top: 1rem; padding: 1.2rem; border: 1px solid #cfe9df; border-radius: var(--radius-lg); background: linear-gradient(135deg, #fff, #f0fbf7); box-shadow: var(--shadow-sm); }
+.replan-summary h2 { margin: 0; font-size: 1rem; }
+.replan-summary dl { display: grid; grid-template-columns: 1.4fr 1.4fr repeat(3, 1fr); gap: 0.8rem; margin: 1rem 0 0; }
+.replan-summary dl > div { padding-left: 0.8rem; border-left: 1px solid #dcebe6; }
+.replan-summary dt { margin-bottom: 0.3rem; color: var(--color-text-muted); font-size: 0.52rem; font-weight: 800; text-transform: uppercase; }
+.replan-summary dd { margin: 0; color: #3e4651; font-size: 0.62rem; line-height: 1.45; }
 .roadmap-content-grid { display: grid; grid-template-columns: minmax(0, 1fr) 19rem; gap: 1.5rem; margin-top: 3.5rem; align-items: start; }
 .roadmap-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.4rem; }
 .roadmap-section-heading > div { display: flex; align-items: center; gap: 0.65rem; }
@@ -101,6 +107,21 @@
 .roadmap-actions .button { min-height: 2.7rem; font-size: 0.7rem; }
 .text-action { align-self: center; padding: 0.7rem; color: var(--color-text-muted); font-size: 0.7rem; }
 .reset-progress-action { border: 0; background: transparent; cursor: pointer; }
+.replan-overlay { position: fixed; z-index: 50; inset: 0; display: flex; justify-content: flex-end; background: rgba(22, 23, 34, .45); backdrop-filter: blur(3px); }
+.replan-panel { width: min(100%, 31rem); height: 100%; overflow-y: auto; padding: 1.7rem; background: #fbfaff; box-shadow: -1rem 0 3rem rgba(28, 24, 52, .18); }
+.replan-panel-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.replan-panel-heading h2 { margin: 0; font-size: 1.5rem; }
+.replan-panel-heading > button { width: 2rem; height: 2rem; border: 1px solid var(--color-border-soft); border-radius: 50%; background: #fff; color: var(--color-text-muted); font-size: 1.1rem; cursor: pointer; }
+.replan-intro { margin: 0.6rem 0 1.4rem; color: var(--color-text-muted); font-size: 0.7rem; line-height: 1.5; }
+.replan-panel form { display: flex; flex-direction: column; gap: 1rem; }
+.replan-panel label, .replan-completed > span { color: #4d5260; font-size: 0.62rem; font-weight: 800; }
+.replan-panel input, .replan-panel select, .replan-panel textarea { width: 100%; margin-top: 0.4rem; padding: 0.7rem; border: 1px solid var(--color-border-soft); border-radius: 0.5rem; color: var(--color-text); background: #fff; font: inherit; font-size: 0.7rem; }
+.replan-panel textarea { resize: vertical; }
+.replan-completed { padding: 0.8rem; border: 1px solid var(--color-border-soft); border-radius: 0.5rem; background: #fff; }
+.replan-completed p { margin: 0.4rem 0 0; color: var(--color-text-muted); font-size: 0.62rem; line-height: 1.5; }
+.replan-error { margin: 0; padding: 0.7rem; border-radius: 0.4rem; color: #a53e47; background: #fff0f1; font-size: 0.65rem; }
+.replan-panel-actions { display: flex; justify-content: flex-end; gap: 0.6rem; padding-top: 0.5rem; }
+.replan-panel-actions .button { min-height: 2.6rem; font-size: 0.68rem; }
 .roadmap-actions .download-message { min-height: 1rem; margin-top: 0.8rem; color: #168564; }
 .roadmap-empty-state { display: flex; min-height: 40rem; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
 .roadmap-empty-state h1 { margin-bottom: 1rem; }
@@ -112,6 +133,7 @@
   .learner-summary > div:nth-child(-n+2) { border-bottom: 1px solid var(--color-border-soft); }
   .roadmap-content-grid { grid-template-columns: 1fr; }
   .roadmap-sidebar { display: grid; grid-template-columns: 1fr 1fr; }
+  .replan-summary dl { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 42rem) {
@@ -127,4 +149,6 @@
   .roadmap-section-heading { align-items: flex-start; flex-direction: column; }
   .roadmap-progress { grid-template-columns: 1fr; }
   .roadmap-progress p { white-space: normal; }
+  .replan-summary dl { grid-template-columns: 1fr; }
+  .replan-panel { padding: 1.2rem; }
 }

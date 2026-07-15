@@ -1,87 +1,119 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using PathPilot_AI_API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+const string FrontendCorsPolicy = "Frontend";
 
-const string ViteCorsPolicy = "ViteFrontend";
-
-builder.Services.AddControllers()
-    .ConfigureApiBehaviorOptions(options =>
-    {
-        options.InvalidModelStateResponseFactory = context =>
-        {
-            var details = new ValidationProblemDetails(context.ModelState)
-            {
-                Title = "The roadmap request is invalid.",
-                Detail = "Review the highlighted fields and submit the request again.",
-                Status = StatusCodes.Status400BadRequest,
-                Instance = context.HttpContext.Request.Path
-            };
-
-            return new BadRequestObjectResult(details);
-        };
-    });
-builder.Services.AddCors(options =>
+builder.Services.AddProblemDetails(options =>
 {
-    options.AddPolicy(ViteCorsPolicy, policy =>
+    options.CustomizeProblemDetails = context =>
     {
-        policy.WithOrigins("http://localhost:5173", "https://localhost:5173")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
+        context.ProblemDetails.Instance ??= context.HttpContext.Request.Path;
+        context.ProblemDetails.Extensions["traceId"] = context.HttpContext.TraceIdentifier;
+    };
+});
+builder.Services.AddControllers().ConfigureApiBehaviorOptions(options =>
+{
+    options.InvalidModelStateResponseFactory = context => new BadRequestObjectResult(new ValidationProblemDetails(context.ModelState)
+    {
+        Title = "The roadmap request is invalid.",
+        Detail = "Review the supplied fields and submit the request again.",
+        Status = StatusCodes.Status400BadRequest,
+        Instance = context.HttpContext.Request.Path
     });
+});
+
+var configuredOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? [];
+var allowedOrigins = configuredOrigins
+    .Where(origin => !string.IsNullOrWhiteSpace(origin))
+    .Select(origin => origin.Trim().TrimEnd('/'))
+    .Distinct(StringComparer.OrdinalIgnoreCase)
+    .ToList();
+if (builder.Environment.IsDevelopment())
+{
+    allowedOrigins.AddRange(["http://localhost:5173", "https://localhost:5173"]);
+}
+
+builder.Services.AddCors(options => options.AddPolicy(FrontendCorsPolicy, policy =>
+{
+    if (allowedOrigins.Count > 0)
+    {
+        policy.WithOrigins(allowedOrigins.Distinct(StringComparer.OrdinalIgnoreCase).ToArray());
+    }
+    else
+    {
+        policy.SetIsOriginAllowed(_ => false);
+    }
+    policy.WithMethods("GET", "POST", "OPTIONS")
+        .WithHeaders("Content-Type", "Accept", "Authorization");
+}));
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
 });
 builder.Services.AddHttpClient<OpenAIResponsesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.openai.com/v1/");
     client.Timeout = TimeSpan.FromSeconds(90);
 });
+
 builder.Services.AddScoped<MockRoadmapService>();
+builder.Services.AddScoped<MockRoadmapExplanationService>();
 builder.Services.AddScoped<OpenAIRoadmapService>();
 builder.Services.AddScoped<OpenAIReplanRoadmapService>();
-builder.Services.AddScoped<IReplanRoadmapService>(services =>
-{
-    var configuration = services.GetRequiredService<IConfiguration>();
-    return string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"])
-        ? services.GetRequiredService<MockRoadmapService>()
-        : services.GetRequiredService<OpenAIReplanRoadmapService>();
-});
-builder.Services.AddScoped<MockRoadmapExplanationService>();
 builder.Services.AddScoped<OpenAIRoadmapExplanationService>();
-builder.Services.AddScoped<IRoadmapExplanationService>(services =>
-{
-    var configuration = services.GetRequiredService<IConfiguration>();
-    return string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"])
-        ? services.GetRequiredService<MockRoadmapExplanationService>()
-        : services.GetRequiredService<OpenAIRoadmapExplanationService>();
-});
+builder.Services.AddScoped<UnavailableAIService>();
+
 builder.Services.AddScoped<IRoadmapService>(services =>
 {
     var configuration = services.GetRequiredService<IConfiguration>();
-    return string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"])
+    if (!string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"]) && !string.IsNullOrWhiteSpace(configuration["OpenAI:Model"])) return services.GetRequiredService<OpenAIRoadmapService>();
+    return services.GetRequiredService<IHostEnvironment>().IsDevelopment()
         ? services.GetRequiredService<MockRoadmapService>()
-        : services.GetRequiredService<OpenAIRoadmapService>();
+        : services.GetRequiredService<UnavailableAIService>();
 });
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddScoped<IReplanRoadmapService>(services =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    if (!string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"]) && !string.IsNullOrWhiteSpace(configuration["OpenAI:Model"])) return services.GetRequiredService<OpenAIReplanRoadmapService>();
+    return services.GetRequiredService<IHostEnvironment>().IsDevelopment()
+        ? services.GetRequiredService<MockRoadmapService>()
+        : services.GetRequiredService<UnavailableAIService>();
+});
+builder.Services.AddScoped<IRoadmapExplanationService>(services =>
+{
+    var configuration = services.GetRequiredService<IConfiguration>();
+    if (!string.IsNullOrWhiteSpace(configuration["OpenAI:ApiKey"]) && !string.IsNullOrWhiteSpace(configuration["OpenAI:Model"])) return services.GetRequiredService<OpenAIRoadmapExplanationService>();
+    return services.GetRequiredService<IHostEnvironment>().IsDevelopment()
+        ? services.GetRequiredService<MockRoadmapExplanationService>()
+        : services.GetRequiredService<UnavailableAIService>();
+});
+
+if (builder.Environment.IsDevelopment())
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+}
 
 var app = builder.Build();
+app.UseForwardedHeaders();
+app.UseExceptionHandler();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
-
-if (!app.Environment.IsDevelopment())
+else
 {
     app.UseHttpsRedirection();
 }
 
-app.UseCors(ViteCorsPolicy);
-
+app.UseCors(FrontendCorsPolicy);
 app.UseAuthorization();
-
+app.MapGet("/health", () => Results.Ok(new { status = "ok", service = "PathPilot API" }));
 app.MapControllers();
-
 app.Run();

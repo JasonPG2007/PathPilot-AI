@@ -18,7 +18,8 @@ public static class RoadmapJsonSchemas
             "feasibilityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
             "phases": {
               "type": "array",
-              "minItems": 1,
+              "minItems": 3,
+              "maxItems": 4,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -29,9 +30,9 @@ public static class RoadmapJsonSchemas
                   "duration": { "type": "string" },
                   "weeklyWorkload": { "type": "string" },
                   "description": { "type": "string" },
-                  "skills": { "type": "array", "minItems": 1, "items": { "type": "string" } },
-                  "prerequisites": { "type": "array", "items": { "type": "string" } },
-                  "milestones": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+                  "skills": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "type": "string" } },
+                  "prerequisites": { "type": "array", "maxItems": 4, "items": { "type": "string" } },
+                  "milestones": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "string" } },
                   "recommendedProject": {
                     "type": "object",
                     "additionalProperties": false,
@@ -51,15 +52,16 @@ public static class RoadmapJsonSchemas
               "required": ["riskLevel", "issues", "changesMade", "timelineAdjustments", "prerequisiteCorrections"],
               "properties": {
                 "riskLevel": { "type": "string", "enum": ["Low", "Medium", "High"] },
-                "issues": { "type": "array", "items": { "type": "string" } },
-                "changesMade": { "type": "array", "items": { "type": "string" } },
+                "issues": { "type": "array", "maxItems": 4, "items": { "type": "string" } },
+                "changesMade": { "type": "array", "maxItems": 4, "items": { "type": "string" } },
                 "timelineAdjustments": { "type": "string" },
                 "prerequisiteCorrections": { "type": "string" }
               }
             },
             "skillVault": {
               "type": "array",
-              "minItems": 1,
+              "minItems": 3,
+              "maxItems": 4,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -72,7 +74,8 @@ public static class RoadmapJsonSchemas
             },
             "suggestedProjects": {
               "type": "array",
-              "minItems": 1,
+              "minItems": 3,
+              "maxItems": 3,
               "items": {
                 "type": "object",
                 "additionalProperties": false,
@@ -90,6 +93,39 @@ public static class RoadmapJsonSchemas
         }
         """)!;
 
+    public static JsonNode Planner { get; } = JsonNode.Parse("""
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["summary", "phases", "recommendedProjects"],
+          "properties": {
+            "summary": { "type": "string" },
+            "phases": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["title", "skills", "prerequisites", "milestones"],
+                "properties": {
+                  "title": { "type": "string" },
+                  "skills": { "type": "array", "minItems": 1, "maxItems": 5, "items": { "type": "string" } },
+                  "prerequisites": { "type": "array", "maxItems": 4, "items": { "type": "string" } },
+                  "milestones": { "type": "array", "minItems": 1, "maxItems": 4, "items": { "type": "string" } }
+                }
+              }
+            },
+            "recommendedProjects": {
+              "type": "array",
+              "minItems": 3,
+              "maxItems": 3,
+              "items": { "type": "string" }
+            }
+          }
+        }
+        """)!;
+
     public static JsonNode Critic { get; } = JsonNode.Parse("""
         {
           "type": "object",
@@ -97,11 +133,12 @@ public static class RoadmapJsonSchemas
           "required": ["riskLevel", "issues", "recommendedChanges", "timelineAdjustments", "prerequisiteCorrections"],
           "properties": {
             "riskLevel": { "type": "string", "enum": ["Low", "Medium", "High"] },
-            "issues": { "type": "array", "items": { "type": "string" } },
-            "recommendedChanges": { "type": "array", "items": { "type": "string" } },
+            "issues": { "type": "array", "maxItems": 4, "items": { "type": "string" } },
+            "recommendedChanges": { "type": "array", "maxItems": 4, "items": { "type": "string" } },
             "timelineAdjustments": { "type": "string" },
             "prerequisiteCorrections": { "type": "string" }
           }
         }
         """)!;
+
 }

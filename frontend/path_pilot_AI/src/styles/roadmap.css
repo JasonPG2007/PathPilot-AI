@@ -1,5 +1,5 @@
 .roadmap-page { min-height: 60rem; padding: 2.5rem 1rem 7rem; background: linear-gradient(180deg, #fbfaff, #f8f7fd); }
-.roadmap-header, .learner-summary, .strategy-selector, .roadmap-progress, .replan-summary, .roadmap-content-grid, .projects-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
+.roadmap-header, .learner-summary, .strategy-selector, .roadmap-progress, .replan-summary, .roadmap-content-grid, .projects-section, .trusted-resources-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
 .roadmap-breadcrumb { margin-bottom: 1.4rem; color: #8a8e9d; font-size: 0.7rem; }
 .roadmap-breadcrumb span { margin-inline: 0.4rem; color: #b3b5c0; }
 .roadmap-header > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
@@ -87,6 +87,24 @@
 .milestone-list li.is-complete > span:nth-child(2) { text-decoration: line-through; opacity: 0.65; }
 .milestone-list li > div { grid-column: 2; display: flex; gap: 0.3rem; justify-self: start; margin-top: 0.15rem; }
 .milestone-list button { border: 1px solid var(--color-border-soft); }
+.phase-resources { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--color-border-soft); }
+.phase-resources > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; }
+.phase-resources > div:first-child span { color: var(--color-text-muted); font-size: 0.5rem; }
+.phase-resource-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.55rem; }
+.resource-card { min-width: 0; padding: 0.7rem; border: 1px solid var(--color-border-soft); border-radius: 0.55rem; background: #fcfbff; }
+.resource-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; color: var(--color-primary); font-size: 0.45rem; font-weight: 800; text-transform: uppercase; }
+.resource-cost { padding: 0.18rem 0.3rem; border-radius: 99rem; color: #176c55; background: #e6f8f1; }
+.resource-cost--paid { color: #8a5b16; background: #fff3d7; }
+.resource-card h5 { margin: 0.5rem 0 0.25rem; font-size: 0.65rem; line-height: 1.35; }
+.resource-provider { margin: 0; color: var(--color-text-muted); font-size: 0.5rem; }
+.resource-match { display: inline-block; margin-top: 0.5rem; padding: 0.2rem 0.35rem; border-radius: 0.25rem; color: #4e457a; background: var(--color-primary-soft); font-size: 0.46rem; font-weight: 700; }
+.resource-reason { min-height: 2.5rem; margin: 0.45rem 0; color: var(--color-text-muted); font-size: 0.5rem; line-height: 1.5; }
+.resource-card a { display: inline-flex; gap: 0.25rem; margin-top: 0.55rem; color: var(--color-primary); font-size: 0.5rem; font-weight: 800; }
+.resource-card a:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 3px; }
+.trusted-resources-section { margin-top: 4rem; }
+.trusted-resource-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; }
+.resource-card--compact { padding: 1rem; background: #fff; box-shadow: var(--shadow-sm); }
+.resource-card--compact h5 { font-size: 0.78rem; }
 .phase-project .why-action { margin-top: 0.35rem; padding: 0; }
 .roadmap-sidebar { display: flex; flex-direction: column; gap: 1rem; }
 .critic-review-card, .skill-vault-card { padding: 1.3rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
@@ -172,12 +190,13 @@
   .replan-summary dl { grid-template-columns: 1fr 1fr; }
   .strategy-grid { grid-template-columns: 1fr; }
   .strategy-card > p { min-height: 0; }
+  .phase-resource-grid { grid-template-columns: 1fr 1fr; }
 }
 
 @media (max-width: 42rem) {
   .roadmap-page { padding: 1.5rem 0.75rem 5rem; }
   .roadmap-header > div { align-items: flex-start; flex-direction: column; }
-  .learner-summary, .roadmap-sidebar, .project-grid { grid-template-columns: 1fr; }
+  .learner-summary, .roadmap-sidebar, .project-grid, .phase-resource-grid, .trusted-resource-grid { grid-template-columns: 1fr; }
   .learner-summary > div { border-right: 0; border-bottom: 1px solid var(--color-border-soft); }
   .phase-details, .phase-meta { grid-template-columns: 1fr; }
   .milestone-list ul { grid-template-columns: 1fr; }

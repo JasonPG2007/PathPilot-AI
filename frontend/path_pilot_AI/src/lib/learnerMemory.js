@@ -1,20 +1,20 @@
 const LEARNER_MEMORY_KEY = 'pathpilotLearnerMemory'
 const MEMORY_VERSION = 1
 
-export function getSkillId(phaseId, index) {
-  return `phase:${phaseId}:skill:${index}`
+export function getSkillId(phaseId, index, explicitId) {
+  return explicitId ?? `phase:${phaseId}:skill:${index}`
 }
 
-export function getMilestoneId(phaseId, index) {
-  return `phase:${phaseId}:milestone:${index}`
+export function getMilestoneId(phaseId, index, explicitId) {
+  return explicitId ?? `phase:${phaseId}:milestone:${index}`
 }
 
 function getTrackableIds(roadmap) {
   const skills = []
   const milestones = []
   roadmap.phases.forEach((phase) => {
-    phase.skills.forEach((_, index) => skills.push(getSkillId(phase.id, index)))
-    phase.milestones.forEach((_, index) => milestones.push(getMilestoneId(phase.id, index)))
+    phase.skills.forEach((_, index) => skills.push(getSkillId(phase.id, index, phase.skillIds?.[index])))
+    phase.milestones.forEach((_, index) => milestones.push(getMilestoneId(phase.id, index, phase.milestoneIds?.[index])))
   })
   return { skills, milestones }
 }
@@ -23,8 +23,8 @@ function getCurrentPhase(roadmap, completedSkillIds, completedMilestoneIds) {
   const completedSkills = new Set(completedSkillIds)
   const completedMilestones = new Set(completedMilestoneIds)
   const activePhase = roadmap.phases.find((phase) => (
-    phase.skills.some((_, index) => !completedSkills.has(getSkillId(phase.id, index))) ||
-    phase.milestones.some((_, index) => !completedMilestones.has(getMilestoneId(phase.id, index)))
+    phase.skills.some((_, index) => !completedSkills.has(getSkillId(phase.id, index, phase.skillIds?.[index]))) ||
+    phase.milestones.some((_, index) => !completedMilestones.has(getMilestoneId(phase.id, index, phase.milestoneIds?.[index])))
   ))
   return activePhase?.id ?? roadmap.phases.at(-1)?.id ?? null
 }

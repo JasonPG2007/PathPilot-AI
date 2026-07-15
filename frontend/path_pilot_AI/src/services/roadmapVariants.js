@@ -2,7 +2,7 @@ import { formatTimeline, getPhaseMonthRange, parseTimelineMonths, scaleTimelineR
 
 const STORAGE_KEY = 'pathpilotRoadmapStrategy:v1'
 const STORE_VERSION = 3
-const DETERMINISTIC_VARIANT_VERSION = 4
+const DETERMINISTIC_VARIANT_VERSION = 5
 
 export const strategyDefinitions = {
   fast: { name: 'Fast Track', label: 'Faster, higher risk', description: 'Reach portfolio readiness sooner with higher weekly intensity and less depth.' },
@@ -120,11 +120,53 @@ function storedProgress() {
 
 function deepAddition(phaseIndex) {
   const additions = [
-    { skill: 'Foundational theory and prerequisite review', milestone: 'Complete a prerequisite diagnostic and document every corrected knowledge gap.' },
-    { skill: 'Testing, evaluation, and error analysis', milestone: 'Define evaluation criteria, run repeatable tests, and analyze failure cases.' },
-    { skill: 'Reproducibility and technical communication', milestone: 'Reproduce results from a clean environment and publish a reflection with limitations.' },
+    { skills: ['Prerequisite diagnostic and gap remediation', 'Mathematical foundations and reproducible environment audit'], prerequisite: 'Verified prerequisite baseline and reproducible local environment', milestone: 'Complete a prerequisite diagnostic, remediate documented gaps, and reproduce the foundation setup from a clean environment.' },
+    { skills: ['Model error analysis and uncertainty', 'Statistical evaluation and experiment reproducibility'], prerequisite: 'Mathematical foundations review and documented experiment baseline', milestone: 'Run a reproducibility review with statistical evaluation, uncertainty notes, and documented failure cases.' },
+    { skills: ['Reliability testing and monitoring', 'Technical documentation and architecture reflection'], prerequisite: 'Validated evaluation methodology and reproducible experiment results', milestone: 'Deliver reliability tests, monitoring evidence, failure analysis, and an architecture reflection with documented trade-offs.' },
   ]
   return additions[Math.min(phaseIndex, additions.length - 1)]
+}
+
+function withDeepContent(roadmap) {
+  return {
+    ...roadmap,
+    phases: roadmap.phases.map((phase, phaseIndex) => {
+      const addition = deepAddition(phaseIndex)
+      const skills = unique([...phase.skills, ...addition.skills])
+      const milestones = unique([...phase.milestones, addition.milestone])
+      const baseProject = phase.project ?? phase.recommendedProject
+      const project = {
+        ...baseProject,
+        description: /test|evaluation|reproduc|failure analysis/i.test(baseProject.description)
+          ? baseProject.description
+          : `${baseProject.description} Include a test suite, evaluation report, limitations section, reproducible setup, failure analysis, and documented trade-offs.`,
+      }
+      return {
+        ...phase,
+        skills,
+        milestones,
+        prerequisites: unique([...phase.prerequisites, addition.prerequisite]),
+        skillIds: skills.map((skill, index) => {
+          const deepIndex = addition.skills.indexOf(skill)
+          return deepIndex >= 0 ? `phase:${phase.id}:deep:skill:${deepIndex}` : phase.skillIds?.[index]
+        }),
+        milestoneIds: milestones.map((milestone, index) => milestone === addition.milestone
+          ? `phase:${phase.id}:deep:milestone:0`
+          : phase.milestoneIds?.[index]),
+        project,
+        recommendedProject: project,
+      }
+    }),
+  }
+}
+
+function hasCompleteDeepStructure(roadmap) {
+  return roadmap.phases.every((phase, phaseIndex) => {
+    const addition = deepAddition(phaseIndex)
+    return addition.skills.every((skill) => phase.skills.includes(skill)) &&
+      phase.milestones.includes(addition.milestone) &&
+      /test|evaluation|reproduc|failure analysis/i.test(phase.project?.description ?? '')
+  })
 }
 
 function transformProjects(projects, fast, multiplier, timeline) {
@@ -168,18 +210,18 @@ function createVariant(roadmap, strategy) {
       description: fast
         ? `Focus on the minimum essential capabilities needed to build, deploy, and explain credible portfolio evidence by ${getPhaseMonthRange(timeline, phaseIndex, roadmap.phases.length).toLowerCase()}.`
         : `Build durable understanding through prerequisite review, deliberate practice, controlled evaluation, and documented evidence during ${getPhaseMonthRange(timeline, phaseIndex, roadmap.phases.length).toLowerCase()}.`,
-      skills: fast ? fastSkills : unique([...phase.skills, addition.skill]),
+      skills: fast ? fastSkills : unique([...phase.skills, ...addition.skills]),
       prerequisites: [...phase.prerequisites],
       milestones: fast
         ? fastMilestones.map((milestone, milestoneIndex) => milestoneIndex === fastMilestones.length - 1
           ? `${normalizeTimelineReferences(milestone, multiplier, timeline)} Deliver a deployable artifact and interview-ready walkthrough.`
           : normalizeTimelineReferences(milestone, multiplier, timeline))
-        : [...phase.milestones, addition.milestone],
+        : unique([...phase.milestones, addition.milestone]),
       recommendedProject: project,
       project,
     }
   })
-  return {
+  const variant = {
     ...roadmap,
     timeline,
     weeklyHours,
@@ -195,6 +237,7 @@ function createVariant(roadmap, strategy) {
     suggestedProjects,
     projects: suggestedProjects,
   }
+  return fast ? variant : withDeepContent(variant)
 }
 
 export function buildVariants(balancedRoadmap) {
@@ -269,6 +312,11 @@ function repairStrategyIsolation(state) {
   for (const strategy of ['fast', 'deep']) {
     const expectedVariant = restoreCompletedRoadmapItems(variants[strategy], state.canonicalBalancedRoadmap, progress).roadmap
     let entry = strategies[strategy]
+    if (strategy === 'deep' && isValidEntry(entry) && !hasCompleteDeepStructure(entry.roadmap)) {
+      entry = { ...entry, roadmap: withDeepContent(entry.roadmap) }
+      strategies[strategy] = entry
+      devLog('shallow Deep Mastery roadmap repaired')
+    }
     if (isValidEntry(entry)) {
       const repairedEntry = restoreCompletedRoadmapItems(entry.roadmap, state.canonicalBalancedRoadmap, progress)
       if (repairedEntry.valid && repairedEntry.restored) {

@@ -11,11 +11,13 @@ import RoadmapActions from '../components/roadmap/RoadmapActions.jsx'
 import RoadmapHeader from '../components/roadmap/RoadmapHeader.jsx'
 import RoadmapStrategySelector from '../components/roadmap/RoadmapStrategySelector.jsx'
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
+import TrustedResourcesSection from '../components/roadmap/TrustedResourcesSection.jsx'
 import { getMostRecentRoadmap, getStoredRoadmap, hasActiveGenerationAttempt, storeReplannedRoadmap } from '../lib/roadmapSession.js'
 import { getMilestoneId, getProgress, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
 import { formatTimeline } from '../lib/timelineFormat.js'
 import { requestReplan } from '../services/replanApi.js'
 import { requestExplanation } from '../services/explanationApi.js'
+import { recommendResourcesForRoadmap } from '../services/resourceRecommendations.js'
 import { getStrategyComparisons, getStrategyRoadmap, getStrategySummary, loadStrategyState, selectStrategy, storeReplannedStrategy } from '../services/roadmapVariants.js'
 import '../styles/roadmap.css'
 
@@ -58,6 +60,7 @@ function RoadmapPage() {
 
   const progress = getProgress(memory, roadmap)
   const currentPhaseIndex = roadmap.phases.findIndex((phase) => phase.id === memory.currentPhase)
+  const resourceRecommendations = recommendResourcesForRoadmap({ roadmap, learner: displayLearner, strategy: selectedStrategy })
 
   function handleToggle(type, id) {
     setMemory((current) => toggleCompletion(current, roadmap, type, id))
@@ -76,8 +79,8 @@ function RoadmapPage() {
 
   const completedSkillSet = new Set(memory.completedSkillIds)
   const completedMilestoneSet = new Set(memory.completedMilestoneIds)
-  const completedSkills = roadmap.phases.flatMap((phase) => phase.skills.filter((_, index) => completedSkillSet.has(getSkillId(phase.id, index))))
-  const completedMilestones = roadmap.phases.flatMap((phase) => phase.milestones.filter((_, index) => completedMilestoneSet.has(getMilestoneId(phase.id, index))))
+  const completedSkills = roadmap.phases.flatMap((phase) => phase.skills.filter((_, index) => completedSkillSet.has(getSkillId(phase.id, index, phase.skillIds?.[index]))))
+  const completedMilestones = roadmap.phases.flatMap((phase) => phase.milestones.filter((_, index) => completedMilestoneSet.has(getMilestoneId(phase.id, index, phase.milestoneIds?.[index]))))
 
   async function handleReplan(constraints) {
     setReplanPending(true)
@@ -144,7 +147,7 @@ function RoadmapPage() {
       {replanSummary && <ReplanSummary summary={replanSummary} />}
       <ProgressOverview currentPhase={currentPhaseIndex + 1} phaseCount={roadmap.phases.length} progress={progress} />
       <div className="roadmap-content-grid roadmap-variant-transition" key={`timeline-${selectedStrategy}`}>
-        <RoadmapTimeline memory={memory} onExplain={handleExplain} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} />
+        <RoadmapTimeline memory={memory} onExplain={handleExplain} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} resourcesByPhase={resourceRecommendations.byPhase} />
         <aside className="roadmap-sidebar">
           <CriticReviewCard review={roadmap.criticReview} />
           <div className="skill-vault-card">
@@ -162,6 +165,7 @@ function RoadmapPage() {
         <div className="roadmap-section-heading"><div><span>▣</span><h2>Suggested Portfolio Projects</h2></div><p>Three role-aligned builds</p></div>
         <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
+      <TrustedResourcesSection resources={resourceRecommendations.highlights} />
       <RoadmapActions onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
       {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={displayLearner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
       {explanationContext && <ExplanationPanel error={explanationError} explanation={explanation} item={explanationContext.selectedItem} loading={explanationLoading} onClose={() => setExplanationContext(null)} onRetry={() => loadExplanation(explanationContext)} />}

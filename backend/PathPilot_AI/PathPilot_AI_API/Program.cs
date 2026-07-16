@@ -57,7 +57,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 builder.Services.AddHttpClient<OpenAIResponsesClient>(client =>
 {
     client.BaseAddress = new Uri("https://api.openai.com/v1/");
-    client.Timeout = TimeSpan.FromSeconds(170);
+    client.Timeout = TimeSpan.FromSeconds(200);
 });
 
 builder.Services.AddScoped<MockRoadmapService>();

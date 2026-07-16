@@ -92,9 +92,12 @@ public sealed class OpenAIRoadmapService : IRoadmapService
         {
             throw;
         }
-        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException exception) when (!cancellationToken.IsCancellationRequested)
         {
-            throw new RoadmapGenerationException("The AI service took too long to respond. Please try again.");
+            _logger.LogWarning("Initial generation OpenAI request hit the configured HTTP timeout.");
+            throw new UpstreamServiceTimeoutException(
+                "The OpenAI roadmap request exceeded the configured 200-second service timeout.",
+                exception);
         }
         catch (Exception exception)
         {

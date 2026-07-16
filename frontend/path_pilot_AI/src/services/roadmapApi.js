@@ -1,8 +1,24 @@
 import { devLog } from '../lib/roadmapSession.js'
 
-const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
-const REQUEST_TIMEOUT_MS = 120000
+const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
+export const GENERATION_TIMEOUT_MS = 210_000
 const generationRequests = new Map()
+
+export class GenerationTimeoutError extends Error {
+  constructor() {
+    super('Roadmap generation timed out after 210 seconds. Your learner profile is still available—please retry when ready.')
+    this.name = 'GenerationTimeoutError'
+  }
+}
+
+export class GenerationApiError extends Error {
+  constructor(message, kind, status = null) {
+    super(message)
+    this.name = 'GenerationApiError'
+    this.kind = kind
+    this.status = status
+  }
+}
 
 function toApiRequest(learner) {
   return {
@@ -48,20 +64,36 @@ async function getErrorMessage(response) {
   }
 }
 
-async function executeGeneration(learner) {
+async function getResponseError(response) {
+  const detail = await getErrorMessage(response)
+  if (response.status === 504) {
+    return new GenerationApiError(detail || 'The AI service took too long to finish the roadmap.', 'server-timeout', 504)
+  }
+  if (response.status === 502) {
+    return new GenerationApiError(detail || 'The AI service could not complete the roadmap.', 'upstream-failure', 502)
+  }
+  if (response.status === 400) {
+    return new GenerationApiError(detail, 'validation', 400)
+  }
+  return new GenerationApiError(detail, 'server', response.status)
+}
+
+async function executeGeneration(learner, { fetchImpl, timeoutMs }) {
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const startedAt = Date.now()
+  const timeout = setTimeout(() => controller.abort('generation-timeout'), timeoutMs)
 
   try {
     devLog('generation request started')
-    const response = await fetch(`${API_BASE_URL}/api/roadmaps/generate`, {
+    const response = await fetchImpl(`${API_BASE_URL}/api/roadmaps/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(toApiRequest(learner)),
       signal: controller.signal,
     })
 
-    if (!response.ok) throw new Error(await getErrorMessage(response))
+    devLog(`generation server status ${response.status}`)
+    if (!response.ok) throw await getResponseError(response)
 
     let normalized
     try {
@@ -75,27 +107,29 @@ async function executeGeneration(learner) {
       throw new Error('The roadmap service returned an invalid roadmap. Please try again.')
     }
     devLog('API response accepted')
+    devLog(`generation completed in ${Date.now() - startedAt}ms`)
     return normalized
   } catch (error) {
-    if (error.name === 'AbortError') {
-      throw new Error('The roadmap request timed out. Check that the API is running, then try again.', { cause: error })
+    if (controller.signal.aborted) {
+      devLog(`generation frontend timeout elapsed after ${Date.now() - startedAt}ms`)
+      throw new GenerationTimeoutError()
     }
     if (error instanceof TypeError) {
-      throw new Error('We could not reach the PathPilot API. Check the backend connection and try again.', { cause: error })
+      throw new GenerationApiError('We could not reach the PathPilot API. Check your connection and try again.', 'connection')
     }
     throw error
   } finally {
-    window.clearTimeout(timeout)
+    clearTimeout(timeout)
   }
 }
 
-export function generateRoadmap(learner, requestId) {
+export function generateRoadmap(learner, requestId, { fetchImpl = fetch, timeoutMs = GENERATION_TIMEOUT_MS } = {}) {
   if (generationRequests.has(requestId)) {
     devLog('duplicate request blocked')
     return generationRequests.get(requestId)
   }
 
-  const request = executeGeneration(learner)
+  const request = executeGeneration(learner, { fetchImpl, timeoutMs })
   generationRequests.set(requestId, request)
   return request
 }

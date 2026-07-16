@@ -117,7 +117,7 @@ function ProcessingPage() {
 
         <div className={`completion-message${stage === 3 ? ' completion-message--visible' : ''}`} aria-live="polite">
           <span><FontAwesomeIcon aria-hidden="true" icon={stage === 3 ? faCircleCheck : faRoute} /></span>
-          <div><strong>{roadmap ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{roadmap ? 'Opening your personalized learning journey…' : animationCompleted ? 'Finalizing your personalized roadmap...' : 'The agents are refining your learning journey…'}</p></div>
+          <div><strong>{roadmap ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{roadmap ? 'Opening your personalized learning journey…' : animationCompleted ? 'Finalizing your personalized roadmap... This can take up to a few minutes on free hosting.' : 'The agents are refining your learning journey…'}</p></div>
         </div>
       </section>
       <p className="processing-note">Please keep this page open. You’ll be redirected automatically.</p>

@@ -26,6 +26,7 @@ public sealed class RoadmapsController : ControllerBase
     [ProducesResponseType<ValidationProblemDetails>(StatusCodes.Status400BadRequest)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status408RequestTimeout)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status502BadGateway)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status504GatewayTimeout)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status503ServiceUnavailable)]
     public async Task<ActionResult<RoadmapResponse>> Generate(
         [FromBody] GenerateRoadmapRequest request,
@@ -39,8 +40,27 @@ public sealed class RoadmapsController : ControllerBase
         {
             return ConfigurationProblem(exception);
         }
+        catch (UpstreamServiceTimeoutException exception)
+        {
+            _logger.LogWarning("Initial generation upstream request timed out.");
+            return Problem(
+                statusCode: StatusCodes.Status504GatewayTimeout,
+                title: "The AI service took too long to respond.",
+                detail: exception.Message,
+                instance: HttpContext.Request.Path);
+        }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogInformation("Initial generation stopped because the client disconnected.");
+            return Problem(
+                statusCode: 499,
+                title: "The client closed the request.",
+                detail: "Roadmap generation stopped after the client disconnected.",
+                instance: HttpContext.Request.Path);
+        }
         catch (OperationCanceledException)
         {
+            _logger.LogInformation("Initial generation request was cancelled before completion.");
             return CancellationProblem();
         }
         catch (RoadmapGenerationException exception)

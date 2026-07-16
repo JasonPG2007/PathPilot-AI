@@ -8,6 +8,8 @@
 
 PathPilot AI turns a learner's goal, experience, schedule, and preferences into a critic-audited learning journey. It combines GPT-5.6 workflows with deterministic local systems for progress, strategy comparison, achievements, trusted resources, PDF export, and privacy-conscious sharing.
 
+![PathPilot AI roadmap with AI Coach Insights, Journey Dashboard, and achievements](docs/screenshots/journeydashboard.png)
+
 ## The problem
 
 Learning advice is often generic, static, and disconnected from execution. Course lists rarely adapt when available time changes, completed work is forgotten, and learners are left without an explanation of why a skill or project matters. Even a strong initial roadmap can become outdated as circumstances change.
@@ -23,6 +25,76 @@ PathPilot behaves like an adaptive learning coach rather than a one-time roadmap
 - explains individual skills, milestones, projects, and phases;
 - adapts remaining work when learner constraints change; and
 - connects planning to persistent progress, achievements, and next actions.
+
+## Product Tour
+
+### Start with the learner’s goal
+
+PathPilot introduces the product as an adaptive AI learning coach: it plans a path, challenges the draft, and delivers a refined roadmap instead of a generic list of links.
+
+![PathPilot AI landing page with learning-roadmap value proposition and agent workflow](docs/screenshots/landingpage.png)
+
+### Create a personalized journey
+
+The learner defines a goal, starting level, timeline, weekly availability, existing skills, and preferred learning style. A live summary makes the constraints clear before generation begins.
+
+![Create Journey form with learner profile inputs and live summary](docs/screenshots/createform.png)
+
+### Planner → Critic → Revision
+
+Initial generation is an explicit sequential workflow: Planner drafts, Critic audits feasibility and prerequisite order, and Revision returns the validated final plan. These are orchestrated request stages, not autonomous background agents.
+
+![Processing screen showing Planner, Critic, and Revision stages](docs/screenshots/processing.png)
+
+### Roadmap overview, AI Coach, and learner progress
+
+The hero preview above brings the core experience together: personalized AI Coach Insights, current progress, next action, estimated finish, feasibility, and earned achievements. It turns the generated plan into a journey the learner can continue over time.
+
+### Compare Fast, Balanced, and Deep strategies
+
+Learners can compare meaningful trade-offs in speed, workload, depth, risk, confidence, phase content, and project scope. Switching is deterministic and preserves completed-item credit.
+
+![Fast Track, Balanced, and Deep Mastery roadmap comparison](docs/screenshots/alternative.png)
+
+### Understand why each item matters
+
+Explain Why gives contextual reasoning for a selected roadmap item, including its prerequisite role, career impact, and expected benefit, while keeping the roadmap visible.
+
+![Explain Why panel with contextual roadmap recommendation guidance](docs/screenshots/explainwhy.png)
+
+### Adapt without losing completed work
+
+The replan panel captures changed time constraints and learner difficulty while making completed skills and milestones explicit. Completed work remains immutable; only unfinished work is eligible for revision.
+
+![Adaptive Replanning panel with updated constraints and completed work](docs/screenshots/replanpanel.png)
+
+The saved replan result clearly summarizes what changed, why it changed, and the updated workload, timeline, risk, and confidence without resetting progress or strategy selection.
+
+![Replanned roadmap with updated strategy metrics and Journey Replanned summary](docs/screenshots/adaptive.png)
+
+### Learn with trusted resources
+
+Each phase is grounded in a deterministic catalog of reputable providers. Recommendations explain their skill match and strategy fit rather than relying on generated or invented links.
+
+![Trusted learning-resource recommendations matched to roadmap phases](docs/screenshots/resources.png)
+
+### Export a professional roadmap
+
+PathPilot generates a structured multi-page PDF containing the coach summary, progress, phases, projects, and recommended resources—not a screenshot of the webpage.
+
+![Professional PathPilot AI roadmap PDF export preview](docs/screenshots/pdf.png)
+
+### Share honestly and privately
+
+Share & Export supports a concise summary, safe app link, copied roadmap summary, and PDF download. The UI makes clear that the full roadmap and saved progress remain local to the current browser.
+
+![Share and Export dialog with summary, link, PDF, and privacy options](docs/screenshots/shareexport.png)
+
+### Responsive on mobile
+
+The same product story and staged AI workflow remain readable on a narrow mobile layout, with touch-friendly actions and no dependency on a desktop-only experience.
+
+![Responsive mobile PathPilot AI landing experience](docs/screenshots/mobile.png)
 
 ## Core user flow
 
@@ -325,23 +397,6 @@ dotnet publish -c Release
 - Collaborative mentoring
 - Institution-level deployment
 - Richer learner outcome evaluation
-
-## Screenshots
-
-Submission screenshots are tracked in [`docs/screenshots/`](docs/screenshots/README.md). The following assets are intentionally documented as TODOs until real captures are added; no fabricated or empty image files are included.
-
-- `docs/screenshots/landing.png`
-- `docs/screenshots/create.png`
-- `docs/screenshots/processing.png`
-- `docs/screenshots/roadmap.png`
-- `docs/screenshots/coach-insights.png`
-- `docs/screenshots/strategies.png`
-- `docs/screenshots/dashboard-achievements.png`
-- `docs/screenshots/explain.png`
-- `docs/screenshots/replan.png`
-- `docs/screenshots/resources.png`
-- `docs/screenshots/pdf.png`
-- `docs/screenshots/share-export.png`
 
 ## Built for OpenAI Build Week
 

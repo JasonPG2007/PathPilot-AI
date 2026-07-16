@@ -1,20 +1,39 @@
-# PathPilot submission screenshots
+# PathPilot AI Screenshot Package
 
-Add real product captures to this directory before final submission. Do not commit blank placeholder images.
+Capture real images from the production deployment. Do not add blank or fabricated placeholder images. See [`../SCREENSHOT_GUIDE.md`](../SCREENSHOT_GUIDE.md) for exact preparation, framing, and crop guidance.
 
-| File | Capture |
-| --- | --- |
-| `landing.png` | Landing page |
-| `create.png` | Create Journey form |
-| `processing.png` | Planner → Critic → Revision processing state |
-| `roadmap.png` | Full roadmap overview |
-| `coach-insights.png` | AI Coach Insights |
-| `strategies.png` | Fast Track, Balanced, and Deep Mastery comparison |
-| `dashboard-achievements.png` | Journey Dashboard and Achievement Badges |
-| `explain.png` | Explain Why panel |
-| `replan.png` | Adaptive Replanning panel and summary |
-| `resources.png` | Trusted Resource Recommendations |
-| `pdf.png` | Professional PDF export preview |
-| `share-export.png` | Share & Export panel |
+- [x] `landingpage.png`  
+  Landing page showing the product vision, hero, AI workflow, and primary CTA.
 
-<!-- TODO: Replace each documented entry with a real screenshot captured from the deployed application. -->
+- [x] `createform.png`  
+  Create Journey form showing learner inputs, learning styles, and Live Summary.
+
+- [x] `processing.png`  
+  Processing experience showing Planner, Critic, and Revision workflow states.
+
+- [x] `journeydashboard.png`  
+  Combined roadmap overview showing AI Coach Insights, Journey Dashboard, and Achievement Badges.
+
+- [x] `alternative.png`  
+  Fast Track, Balanced, and Deep Mastery strategy comparison.
+
+- [x] `explainwhy.png`  
+  Explain Why panel open beside its selected roadmap item.
+
+- [x] `adaptive.png`  
+  Restored Adaptive Replanning result with updated strategy metrics and Journey Replanned summary.
+
+- [x] `resources.png`  
+  Trusted learning-resource recommendations with providers and match reasons.
+
+- [x] `replanpanel.png`  
+  Adaptive Replanning panel showing updated constraints and completed work that remains credited.
+
+- [x] `pdf.png`  
+  Professional generated roadmap PDF preview.
+
+- [x] `shareexport.png`  
+  Share & Export dialog showing actions and local-privacy messaging.
+
+- [x] `mobile.png`  
+  Responsive mobile layout with complete, readable roadmap content.

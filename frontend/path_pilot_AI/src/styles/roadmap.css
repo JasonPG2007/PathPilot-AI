@@ -181,6 +181,7 @@
 .explanation-content dd { margin: 0; color: var(--color-text-muted); font-size: 0.68rem; line-height: 1.55; }
 @keyframes explanation-spin { to { transform: rotate(360deg); } }
 .roadmap-actions .download-message { min-height: 1rem; margin-top: 0.8rem; color: #168564; }
+.roadmap-actions .download-message--error { color: #a53e47; }
 .roadmap-empty-state { display: flex; min-height: 40rem; align-items: center; justify-content: center; flex-direction: column; text-align: center; }
 .roadmap-empty-state h1 { margin-bottom: 1rem; }
 .roadmap-empty-state > p:not(.roadmap-kicker) { max-width: 32rem; margin-bottom: 1.5rem; color: var(--color-text-muted); }

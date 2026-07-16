@@ -145,6 +145,19 @@ function RoadmapPage() {
     loadExplanation(context)
   }
 
+  async function handleDownloadPdf() {
+    const { downloadRoadmapPdf } = await import('../services/roadmapPdf.js')
+    await downloadRoadmapPdf({
+      learner: displayLearner,
+      roadmap,
+      strategy: selectedStrategy,
+      progress,
+      currentPhase: currentPhaseIndex + 1,
+      generatedAt,
+      resourcesByPhase: resourceRecommendations.byPhase,
+    })
+  }
+
   return (
     <div className="roadmap-page">
       <RoadmapHeader goal={roadmap.goal} />
@@ -172,7 +185,7 @@ function RoadmapPage() {
         <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
       <TrustedResourcesSection resources={resourceRecommendations.highlights} />
-      <RoadmapActions onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
+      <RoadmapActions onDownloadPdf={handleDownloadPdf} onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
       {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={displayLearner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
       {explanationContext && <ExplanationPanel error={explanationError} explanation={explanation} item={explanationContext.selectedItem} loading={explanationLoading} onClose={() => setExplanationContext(null)} onRetry={() => loadExplanation(explanationContext)} />}
     </div>

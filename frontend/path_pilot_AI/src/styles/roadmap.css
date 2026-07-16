@@ -1,5 +1,5 @@
 .roadmap-page { min-height: 60rem; padding: 2.5rem 1rem 7rem; background: linear-gradient(180deg, #fbfaff, #f8f7fd); }
-.roadmap-header, .coach-summary-card, .journey-dashboard, .learner-summary, .strategy-selector, .roadmap-progress, .replan-summary, .roadmap-content-grid, .projects-section, .trusted-resources-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
+.roadmap-header, .coach-summary-card, .journey-dashboard, .achievements-section, .learner-summary, .strategy-selector, .roadmap-progress, .replan-summary, .roadmap-content-grid, .projects-section, .trusted-resources-section, .roadmap-actions { width: min(100%, var(--content-width)); margin-inline: auto; }
 .roadmap-breadcrumb { margin-bottom: 1.4rem; color: #8a8e9d; font-size: 0.7rem; }
 .roadmap-breadcrumb span { margin-inline: 0.4rem; color: #b3b5c0; }
 .roadmap-header > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
@@ -53,6 +53,32 @@
 .journey-next-card p { margin: 0.2rem 0 0; color: var(--color-text-muted); font-size: var(--font-size-small); }
 .journey-estimate-note { margin: 0.7rem 0 0; color: var(--color-text-muted); font-size: var(--font-size-label); }
 .journey-dashboard--complete .journey-progress-card progress { accent-color: #168564; }
+.achievements-section { position: relative; margin-top: 1rem; padding: 1.2rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
+.achievements-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 0.9rem; }
+.achievements-heading p, .achievements-heading h2 { margin: 0; }
+.achievements-heading h2 { font-size: var(--font-size-heading-sm); }
+.achievements-heading > strong { color: var(--color-primary); font-size: var(--font-size-small); }
+.achievement-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
+.achievement-card { display: flex; min-width: 0; align-items: flex-start; gap: var(--list-icon-gap); padding: 0.8rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-md); background: #fbfafd; }
+.achievement-card:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.achievement-card--locked { border-style: dashed; }
+.achievement-icon { display: grid; width: 2rem; height: 2rem; flex: 0 0 2rem; place-items: center; border-radius: 0.55rem; color: #777b88; background: #eeedf3; }
+.achievement-card--earned .achievement-icon { color: #8a5b16; background: #fff3d7; }
+.achievement-card > div { min-width: 0; flex: 1; }
+.achievement-title-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+.achievement-title-row h3 { margin: 0; font-size: var(--font-size-small); }
+.achievement-title-row > span { display: inline-flex; align-items: center; gap: 0.25rem; color: var(--color-text-muted); font-size: var(--font-size-label); font-weight: 700; white-space: nowrap; }
+.achievement-card p { margin: 0.3rem 0; color: var(--color-text-muted); font-size: var(--font-size-small); }
+.achievement-card small { color: var(--color-text-muted); font-size: var(--font-size-label); }
+.achievement-progress { height: 0.3rem; margin: 0.5rem 0 0.25rem; overflow: hidden; border-radius: 99rem; background: #e8e6f3; }
+.achievement-progress span { display: block; height: 100%; border-radius: inherit; background: var(--color-primary); transition: width 180ms ease; }
+.next-achievement { display: flex; align-items: flex-start; gap: var(--list-icon-gap); margin-top: 0.7rem; padding: 0.8rem; border-radius: var(--radius-md); background: var(--color-primary-soft); }
+.next-achievement > span { display: grid; width: var(--list-icon-box); height: var(--list-icon-box); flex: 0 0 var(--list-icon-box); place-items: center; color: var(--color-primary); }
+.next-achievement small { color: var(--color-primary-dark); font-size: var(--font-size-label); font-weight: 700; text-transform: uppercase; }
+.next-achievement h3 { margin: 0.1rem 0; font-size: var(--font-size-body-lg); }
+.next-achievement p { margin: 0; color: var(--color-text-muted); font-size: var(--font-size-small); }
+.achievement-announcement { position: fixed; z-index: 70; right: 1rem; bottom: 1rem; max-width: 22rem; margin: 0; padding: 0.8rem 1rem; border: 1px solid #bfe8d9; border-radius: var(--radius-md); color: #176c55; background: #effbf6; box-shadow: var(--shadow-md); font-size: var(--font-size-small); transform: translateY(0); transition: opacity 180ms ease, transform 180ms ease; }
+.achievement-announcement:empty { visibility: hidden; opacity: 0; transform: translateY(0.5rem); }
 .strategy-selector { margin-top: 1rem; padding: 1.2rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
 .strategy-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; margin-bottom: 1rem; }
 .strategy-heading h2 { margin: 0; font-size: 1rem; }
@@ -245,6 +271,7 @@
   .roadmap-header > div { align-items: flex-start; flex-direction: column; }
   .learner-summary, .roadmap-sidebar, .project-grid, .phase-resource-grid, .trusted-resource-grid { grid-template-columns: 1fr; }
   .coach-insight-grid { grid-template-columns: 1fr; }
+  .achievement-grid { grid-template-columns: 1fr; }
   .journey-dashboard-grid { grid-template-columns: 1fr; }
   .journey-progress-card { grid-row: auto; }
   .learner-summary > div { border-right: 0; border-bottom: 1px solid var(--color-border-soft); }
@@ -274,6 +301,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .journey-progress-card progress::-webkit-progress-value { transition: none; }
+  .achievement-progress span, .achievement-announcement { transition: none; }
 }
 
 @media (max-width: 30rem) {

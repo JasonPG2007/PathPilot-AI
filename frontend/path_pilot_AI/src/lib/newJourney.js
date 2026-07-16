@@ -1,6 +1,7 @@
 import { clearLearnerMemory } from './learnerMemory.js'
 import { clearRoadmapSession, devLog, markNewJourneyReset } from './roadmapSession.js'
 import { clearRoadmapStrategyState } from '../services/roadmapVariants.js'
+import { clearAchievementState } from '../services/achievements.js'
 
 export function createGenerationId() {
   return crypto.randomUUID()
@@ -14,6 +15,7 @@ export function startNewJourney(navigate) {
   devLog('learner memory cleared')
   clearRoadmapStrategyState()
   devLog('strategy state cleared')
+  clearAchievementState(active?.generationId ?? active?.generatedAt)
 
   const resetId = createGenerationId()
   markNewJourneyReset(resetId)

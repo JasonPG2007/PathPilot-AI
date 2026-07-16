@@ -22,8 +22,9 @@ function safeList(value) {
   return Array.isArray(value) && value.length ? value : ['None specified']
 }
 
-export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, currentPhase, generatedAt, resourcesByPhase, dashboard }) {
+export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, currentPhase, generatedAt, resourcesByPhase, dashboard, achievements = [] }) {
   const review = roadmap.criticReview || {}
+  const earnedAchievements = achievements.filter((badge) => badge.earned).sort((left, right) => Date.parse(right.earnedAt) - Date.parse(left.earnedAt))
   return {
     cover: {
       goal: roadmap.goal || learner.goal,
@@ -52,6 +53,7 @@ export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, cu
         nextAction: { title: 'Not provided' },
         currentPhase,
       },
+      achievements: earnedAchievements,
     },
     phases: roadmap.phases.map((phase) => ({
       ...phase,
@@ -185,6 +187,10 @@ function addSummary(doc, model) {
   writer.labelValue('Strategy', model.summary.dashboard.strategy)
   writer.labelValue('Estimated finish', model.summary.dashboard.estimatedFinish.label)
   writer.labelValue('Next milestone', model.summary.dashboard.nextAction.title)
+  writer.heading('Achievements')
+  writer.labelValue('Earned badges', `${model.summary.achievements.length}`)
+  writer.labelValue('Badge titles', model.summary.achievements.map((badge) => badge.title).join(', ') || 'None yet')
+  writer.labelValue('Latest badge', model.summary.achievements[0]?.title ?? 'None yet')
   writer.heading('Roadmap Summary', 1)
   writer.labelValue('Progress', `${model.summary.progress.percentage}% complete`)
   writer.labelValue('Completion', `${model.summary.progress.completedCount} of ${model.summary.progress.totalCount} items`)

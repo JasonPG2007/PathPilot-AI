@@ -63,6 +63,11 @@ export function getCachedExplanation(generationId, itemId) {
   return readCache()[getExplanationCacheId(generationId, itemId)] ?? null
 }
 
+export function getCachedExplanationItemIds(generationId) {
+  const prefix = `${generationId}:`
+  return Object.keys(readCache()).filter((key) => key.startsWith(prefix)).map((key) => key.slice(prefix.length))
+}
+
 export function requestExplanation({ generationId, itemId, request, fetchImpl = fetch }) {
   const cacheId = getExplanationCacheId(generationId, itemId)
   const cached = getCachedExplanation(generationId, itemId)

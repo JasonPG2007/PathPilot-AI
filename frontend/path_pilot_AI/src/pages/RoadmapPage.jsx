@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiagramProject } from '@fortawesome/free-solid-svg-icons'
 import CriticReviewCard from '../components/roadmap/CriticReviewCard.jsx'
 import CoachSummaryCard from '../components/roadmap/CoachSummaryCard.jsx'
+import AchievementsSection from '../components/roadmap/AchievementsSection.jsx'
 import ExplanationPanel from '../components/roadmap/ExplanationPanel.jsx'
 import JourneyDashboard from '../components/roadmap/JourneyDashboard.jsx'
 import ProjectCard from '../components/roadmap/ProjectCard.jsx'
@@ -20,10 +21,15 @@ import { buildJourneyDashboard } from '../lib/journeyDashboard.js'
 import { formatTimeline } from '../lib/timelineFormat.js'
 import { startNewJourney } from '../lib/newJourney.js'
 import { requestReplan } from '../services/replanApi.js'
-import { requestExplanation } from '../services/explanationApi.js'
+import { getCachedExplanationItemIds, requestExplanation } from '../services/explanationApi.js'
+import { addExplanationView, addStrategyView, addSuccessfulReplan, evaluateAchievements, evaluateAndStoreAchievements, loadAchievementState } from '../services/achievements.js'
 import { recommendResourcesForRoadmap } from '../services/resourceRecommendations.js'
 import { getStrategyComparisons, getStrategyRoadmap, getStrategySummary, loadStrategyState, selectStrategy, storeReplannedStrategy } from '../services/roadmapVariants.js'
 import '../styles/roadmap.css'
+
+function hasReplanMetadata(strategyState) {
+  return Object.values(strategyState?.strategies ?? {}).some((entry) => entry?.replannedAt && entry?.replanSummary)
+}
 
 function RoadmapPage() {
   const location = useLocation()
@@ -51,8 +57,16 @@ function RoadmapPage() {
   const displayLearner = learner && roadmap ? { ...learner, hours: roadmap.weeklyHours, timeline: formatTimeline(roadmap.timeline) } : learner
   const memoryContext = displayLearner && roadmap && generatedAt ? { learner: displayLearner, roadmap, generatedAt } : null
   const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
+  const [achievementState, setAchievementState] = useState(() => {
+    if (!journeyId || !roadmap || !memory || !selectedStrategy) return null
+    let state = addStrategyView(loadAchievementState(journeyId), selectedStrategy)
+    for (const itemId of getCachedExplanationItemIds(journeyId)) state = addExplanationView(state, itemId)
+    if (hasReplanMetadata(strategyState) && state.replanCount === 0) state = addSuccessfulReplan(state)
+    return evaluateAndStoreAchievements({ state, roadmap, memory, hasReplan: hasReplanMetadata(strategyState) }).state
+  })
+  const [achievementAnnouncement, setAchievementAnnouncement] = useState('')
 
-  if (!displayLearner || !roadmap || !memory || !memoryContext || !strategyState) {
+  if (!displayLearner || !roadmap || !memory || !memoryContext || !strategyState || !achievementState) {
     return (
       <div className="roadmap-page roadmap-empty-state" role="status">
         <p className="roadmap-kicker">NO ROADMAP FOUND</p>
@@ -67,20 +81,36 @@ function RoadmapPage() {
   const progress = dashboard.progress
   const currentPhaseIndex = dashboard.currentPhase - 1
   const resourceRecommendations = recommendResourcesForRoadmap({ roadmap, learner: displayLearner, strategy: selectedStrategy })
+  const achievementResult = evaluateAchievements({ state: achievementState, roadmap, memory, hasReplan: hasReplanMetadata(strategyState) })
+
+  function commitAchievements(state, targetRoadmap = roadmap, targetMemory = memory, hasReplan = hasReplanMetadata(strategyState)) {
+    const result = evaluateAndStoreAchievements({ state, roadmap: targetRoadmap, memory: targetMemory, hasReplan })
+    setAchievementState(result.state)
+    if (result.newlyEarned.length) {
+      const titles = result.badges.filter((badge) => result.newlyEarned.includes(badge.id)).map((badge) => badge.title)
+      setAchievementAnnouncement(`Achievement unlocked: ${titles.join(', ')}`)
+      window.setTimeout(() => setAchievementAnnouncement(''), 4500)
+    }
+  }
 
   function handleToggle(type, id) {
-    setMemory((current) => toggleCompletion(current, roadmap, type, id))
+    const nextMemory = toggleCompletion(memory, roadmap, type, id)
+    setMemory(nextMemory)
+    commitAchievements(achievementState, roadmap, nextMemory)
   }
 
   function handleResetProgress() {
     if (window.confirm('Reset all completed skills and milestones for this roadmap?')) {
-      setMemory(resetLearnerProgress(memoryContext))
+      const nextMemory = resetLearnerProgress(memoryContext)
+      setMemory(nextMemory)
+      commitAchievements(achievementState, roadmap, nextMemory)
     }
   }
 
   function handleStrategyChange(strategy) {
     const nextState = selectStrategy(strategyState, strategy)
     setStrategyState(nextState)
+    commitAchievements(addStrategyView(achievementState, strategy), getStrategyRoadmap(nextState), memory, hasReplanMetadata(nextState))
   }
 
   const completedSkillSet = new Set(memory.completedSkillIds)
@@ -106,8 +136,11 @@ function RoadmapPage() {
       }
       const replannedAt = new Date().toISOString()
       setLearner(updatedLearner)
-      setStrategyState(storeReplannedStrategy(strategyState, selectedStrategy, revisedRoadmap, summary, replannedAt))
-      setMemory((current) => updateLearnerConstraints(current, updatedLearner, constraints.weeklyHours))
+      const nextStrategyState = storeReplannedStrategy(strategyState, selectedStrategy, revisedRoadmap, summary, replannedAt)
+      const nextMemory = updateLearnerConstraints(memory, updatedLearner, constraints.weeklyHours)
+      setStrategyState(nextStrategyState)
+      setMemory(nextMemory)
+      commitAchievements(addSuccessfulReplan(achievementState), revisedRoadmap, nextMemory, true)
       const replannedState = storeReplannedRoadmap({ learner: updatedLearner, roadmap: revisedRoadmap, generationId, generatedAt, replanSummary: summary, replannedAt, strategy: selectedStrategy })
       navigate('/roadmap', { replace: true, state: replannedState })
       setReplanOpen(false)
@@ -145,6 +178,7 @@ function RoadmapPage() {
 
   function handleExplain(context) {
     setExplanationContext(context)
+    commitAchievements(addExplanationView(achievementState, context.itemId))
     loadExplanation(context)
   }
 
@@ -157,6 +191,7 @@ function RoadmapPage() {
       progress,
       currentPhase: currentPhaseIndex + 1,
       dashboard,
+      achievements: achievementResult.badges,
       generatedAt,
       resourcesByPhase: resourceRecommendations.byPhase,
     })
@@ -167,6 +202,7 @@ function RoadmapPage() {
       <RoadmapHeader goal={roadmap.goal} />
       <CoachSummaryCard summary={roadmap.coachSummary} />
       <JourneyDashboard dashboard={dashboard} />
+      <AchievementsSection announcement={achievementAnnouncement} badges={achievementResult.badges} />
       <RoadmapStrategySelector comparisons={getStrategyComparisons(strategyState)} onChange={handleStrategyChange} selectedStrategy={selectedStrategy} />
       {replanSummary && <ReplanSummary summary={replanSummary} />}
       <div className="roadmap-content-grid roadmap-variant-transition" key={`timeline-${selectedStrategy}`}>

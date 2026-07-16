@@ -5,6 +5,7 @@ import { getMostRecentRoadmap, roadmapSessionKeys } from '../src/lib/roadmapSess
 import { learnerMemoryKey } from '../src/lib/learnerMemory.js'
 import { roadmapStrategyStorageKey } from '../src/services/roadmapVariants.js'
 import { explanationCacheKey } from '../src/services/explanationApi.js'
+import { achievementStorageKey } from '../src/services/achievements.js'
 
 class MemoryStorage {
   constructor() { this.values = new Map() }
@@ -33,6 +34,7 @@ function seedJourney() {
     'old-generation:item-1': { explanation: 'Old journey explanation' },
     'unrelated-generation:item-2': { explanation: 'Unrelated explanation' },
   }))
+  localStorage.setItem(achievementStorageKey, JSON.stringify({ version: 1, journeyId: 'old-generation', earnedBadgeIds: ['first-step'] }))
   return roadmapState
 }
 
@@ -50,6 +52,7 @@ test('Create New Journey clears active roadmap, strategy replans, and learner co
   assert.equal(sessionStorage.getItem(roadmapSessionKeys.attempt), null)
   assert.equal(localStorage.getItem(roadmapStrategyStorageKey), null)
   assert.equal(localStorage.getItem(learnerMemoryKey), null)
+  assert.equal(localStorage.getItem(achievementStorageKey), null)
   assert.equal(navigation[0], '/create')
   assert.equal(navigation[1].replace, true)
   assert.ok(navigation[1].state.newJourneyResetId)

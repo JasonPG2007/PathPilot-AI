@@ -6,7 +6,7 @@ namespace PathPilot_AI_API.Services;
 
 public sealed class OpenAIReplanRoadmapService : IReplanRoadmapService
 {
-    public const int MaxOutputTokens = 2800;
+    public const int MaxOutputTokens = 3800;
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IConfiguration _configuration;
@@ -49,7 +49,7 @@ public sealed class OpenAIReplanRoadmapService : IReplanRoadmapService
             response = await _responsesClient.CreateStructuredResponseAsync(
                 apiKey,
                 model,
-                "Return one concise revised roadmap as strict JSON, no markdown. Revise unfinished work only. Completed items are immutable in text, phase, index, and position. Preserve goal, starting level, current phase, and phase IDs. Apply the new timeline and weekly hours. Keep descriptions, issues, changes, and milestones brief. Keep risk and feasibility consistent.",
+                "Return exactly one schema-compliant revised roadmap JSON object with no markdown or extra text. Revise unfinished work only; completed items are immutable in text, phase, index, and position. Preserve goal, starting level, all three phases, current phase, phase IDs, every required project field, skillVault, and suggestedProjects. Apply the new timeline and weekly hours, and keep risk and feasibility consistent. Keep the replan summary concise and specific. Each phase description and milestone must be at most one concise sentence. Each skill and prerequisite must be a concise phrase. Critic issues: at most 3. Changes made: at most 4. Timeline adjustment and prerequisite correction: at most one concise sentence each. Each project description: at most one concise sentence. Do not repeat learner constraints across fields.",
                 input,
                 "replanned_roadmap",
                 RoadmapJsonSchemas.Roadmap,
@@ -91,8 +91,14 @@ public sealed class OpenAIReplanRoadmapService : IReplanRoadmapService
 
         if (response.Status == "incomplete")
         {
+            _logger.LogWarning(
+                "Replan OpenAI stage incomplete after {ElapsedMs} ms. Output tokens: {OutputTokens}; reason: {IncompleteReason}; configured max_output_tokens: {MaxOutputTokens}.",
+                stopwatch.ElapsedMilliseconds,
+                response.OutputTokens,
+                response.IncompleteReason ?? "unknown",
+                MaxOutputTokens);
             throw new RoadmapGenerationException(response.IncompleteReason == "max_output_tokens"
-                ? "Replanning failed because the response reached max_output_tokens."
+                ? "The replan response was incomplete because it exceeded the output limit."
                 : "Replanning failed because the structured response was incomplete.");
         }
 

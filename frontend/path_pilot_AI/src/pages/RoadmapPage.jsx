@@ -82,6 +82,17 @@ function RoadmapPage() {
   const currentPhaseIndex = dashboard.currentPhase - 1
   const resourceRecommendations = recommendResourcesForRoadmap({ roadmap, learner: displayLearner, strategy: selectedStrategy })
   const achievementResult = evaluateAchievements({ state: achievementState, roadmap, memory, hasReplan: hasReplanMetadata(strategyState) })
+  const shareDetails = {
+    goal: roadmap.goal,
+    strategy: dashboard.strategy,
+    timeline: dashboard.timeline,
+    weeklyHours: dashboard.weeklyHours,
+    completionPercentage: progress.percentage,
+    currentPhase: dashboard.currentPhaseTitle,
+    nextAction: dashboard.nextAction.title,
+    feasibilityScore: dashboard.feasibilityScore,
+    riskLevel: dashboard.riskLevel,
+  }
 
   function commitAchievements(state, targetRoadmap = roadmap, targetMemory = memory, hasReplan = hasReplanMetadata(strategyState)) {
     const result = evaluateAndStoreAchievements({ state, roadmap: targetRoadmap, memory: targetMemory, hasReplan })
@@ -225,7 +236,7 @@ function RoadmapPage() {
         <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
       <TrustedResourcesSection resources={resourceRecommendations.highlights} />
-      <RoadmapActions onDownloadPdf={handleDownloadPdf} onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} onStartNewJourney={() => startNewJourney(navigate)} />
+      <RoadmapActions onDownloadPdf={handleDownloadPdf} onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} onStartNewJourney={() => startNewJourney(navigate)} shareDetails={shareDetails} />
       {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={displayLearner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
       {explanationContext && <ExplanationPanel error={explanationError} explanation={explanation} item={explanationContext.selectedItem} loading={explanationLoading} onClose={() => setExplanationContext(null)} onRetry={() => loadExplanation(explanationContext)} />}
     </div>

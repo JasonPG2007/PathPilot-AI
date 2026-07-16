@@ -23,7 +23,7 @@ function toLearnerProfile(learner) {
 }
 
 function normalizeRoadmap(response) {
-  if (!response || !Array.isArray(response.phases) || !response.criticReview || !Array.isArray(response.suggestedProjects)) {
+  if (!response || !Array.isArray(response.phases) || !response.criticReview || !response.coachSummary || !Array.isArray(response.suggestedProjects)) {
     throw new Error('The replan service returned an invalid roadmap.')
   }
   return {
@@ -43,6 +43,7 @@ export function compactRoadmapForReplan(roadmap) {
     weeklyHours: roadmap.weeklyHours,
     startingLevel: roadmap.startingLevel,
     feasibilityScore: roadmap.feasibilityScore,
+    coachSummary: roadmap.coachSummary,
     phases: (roadmap.phases || []).map((phase) => ({
       id: phase.id,
       title: phase.title,

@@ -8,7 +8,7 @@ public static class RoadmapJsonSchemas
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["goal", "summary", "timeline", "weeklyHours", "startingLevel", "feasibilityScore", "phases", "criticReview", "skillVault", "suggestedProjects"],
+          "required": ["goal", "summary", "timeline", "weeklyHours", "startingLevel", "feasibilityScore", "coachSummary", "phases", "criticReview", "skillVault", "suggestedProjects"],
           "properties": {
             "goal": { "type": "string" },
             "summary": { "type": "string" },
@@ -16,6 +16,17 @@ public static class RoadmapJsonSchemas
             "weeklyHours": { "type": "integer", "minimum": 1, "maximum": 80 },
             "startingLevel": { "type": "string" },
             "feasibilityScore": { "type": "integer", "minimum": 0, "maximum": 100 },
+            "coachSummary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["strengths", "biggestChallenge", "recommendedStrategy", "nextAdvice"],
+              "properties": {
+                "strengths": { "type": "string" },
+                "biggestChallenge": { "type": "string" },
+                "recommendedStrategy": { "type": "string", "enum": ["Fast", "Balanced", "Deep"] },
+                "nextAdvice": { "type": "string" }
+              }
+            },
             "phases": {
               "type": "array",
               "minItems": 3,
@@ -97,9 +108,20 @@ public static class RoadmapJsonSchemas
         {
           "type": "object",
           "additionalProperties": false,
-          "required": ["summary", "phases", "recommendedProjects"],
+          "required": ["summary", "coachSummary", "phases", "recommendedProjects"],
           "properties": {
             "summary": { "type": "string" },
+            "coachSummary": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["strengths", "biggestChallenge", "recommendedStrategy", "nextAdvice"],
+              "properties": {
+                "strengths": { "type": "string" },
+                "biggestChallenge": { "type": "string" },
+                "recommendedStrategy": { "type": "string", "enum": ["Fast", "Balanced", "Deep"] },
+                "nextAdvice": { "type": "string" }
+              }
+            },
             "phases": {
               "type": "array",
               "minItems": 3,

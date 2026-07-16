@@ -12,6 +12,7 @@ function fixture() {
   const roadmap = {
     goal: 'Become an ML engineer', summary: 'A plan', timeline: '9 Months (Balanced)', weeklyHours: 8,
     startingLevel: 'Beginner', feasibilityScore: 80,
+    coachSummary: { strengths: 'Clear goal.', biggestChallenge: 'Consistency.', recommendedStrategy: 'Balanced', nextAdvice: 'Start now.' },
     phases: [{
       id: 1, title: 'Foundations', duration: 'Months 1–3', weeklyWorkload: '8 hours/week', description: 'Learn foundations.',
       skills: ['SQL'], prerequisites: ['None'], milestones: ['Query a database'], recommendedProject: project,

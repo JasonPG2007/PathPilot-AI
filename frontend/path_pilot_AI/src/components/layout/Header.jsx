@@ -1,6 +1,8 @@
-import { Link, NavLink } from 'react-router-dom'
+import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { startNewJourney } from '../../lib/newJourney.js'
 
 function Header() {
+  const navigate = useNavigate()
   return (
     <div className="site-header__inner">
       <Link className="brand" to="/">PathPilot AI</Link>
@@ -13,7 +15,7 @@ function Header() {
       </nav>
       <div className="header-actions">
         <button className="login-button" type="button">Log in</button>
-        <Link className="button button--small" to="/create">Start Journey</Link>
+        <button className="button button--small" onClick={() => startNewJourney(navigate)} type="button">Start Journey</button>
       </div>
     </div>
   )

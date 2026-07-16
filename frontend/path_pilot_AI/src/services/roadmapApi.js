@@ -33,6 +33,7 @@ function isValidRoadmap(roadmap) {
     Array.isArray(roadmap.phases) && roadmap.phases.length > 0 &&
     roadmap.phases.every((phase) => phase?.recommendedProject && Array.isArray(phase.skills)) &&
     roadmap.criticReview && typeof roadmap.criticReview.riskLevel === 'string' &&
+    roadmap.coachSummary && typeof roadmap.coachSummary.strengths === 'string' &&
     Array.isArray(roadmap.skillVault) &&
     Array.isArray(roadmap.suggestedProjects)
   )

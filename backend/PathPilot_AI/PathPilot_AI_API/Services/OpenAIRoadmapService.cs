@@ -356,6 +356,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
     private static string? GetPlannerValidationFailure(PlannerDraft roadmap)
     {
         if (string.IsNullOrWhiteSpace(roadmap.Summary)) return "summary was empty";
+        if (roadmap.CoachSummary is null) return "coachSummary was missing";
         if (roadmap.Phases is not { Count: > 0 }) return "phases was empty";
         if (roadmap.Phases.Any(phase => string.IsNullOrWhiteSpace(phase.Title))) return "a phase title was empty";
         if (roadmap.Phases.Any(phase => phase.Skills is not { Count: > 0 })) return "a phase had no skills";
@@ -368,6 +369,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
     {
         if (string.IsNullOrWhiteSpace(roadmap.Goal)) return "goal was empty";
         if (string.IsNullOrWhiteSpace(roadmap.Summary)) return "summary was empty";
+        if (roadmap.CoachSummary is null) return "coachSummary was missing";
         if (roadmap.FeasibilityScore is < 0 or > 100) return "feasibilityScore was outside 0 to 100";
         if (roadmap.Phases is not { Count: > 0 }) return "phases was empty";
         if (roadmap.Phases.Any(phase => string.IsNullOrWhiteSpace(phase.Title))) return "a phase title was empty";
@@ -440,6 +442,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
 
     private sealed record PlannerDraft(
         string Summary,
+        CoachSummary CoachSummary,
         IReadOnlyList<PlannerPhase> Phases,
         IReadOnlyList<string> RecommendedProjects);
 

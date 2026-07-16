@@ -8,6 +8,7 @@ function canonicalRoadmap() {
   return {
     id: 'journey-1', goal: 'Become an engineer', startingLevel: 'Beginner', summary: 'Canonical', timeline: '9 Months (Balanced)', weeklyHours: 10,
     feasibilityScore: 80,
+    coachSummary: { strengths: 'Clear goal.', biggestChallenge: 'Consistency.', recommendedStrategy: 'Balanced', nextAdvice: 'Start now.' },
     phases: [{
       id: 1, title: 'Canonical Phase', duration: 'Months 1–9', weeklyWorkload: '10 hours/week', description: 'Learn well.',
       skills: ['Skill 0', 'Skill 1', 'Skill 2', 'Skill 3', 'Completed Skill 4'],

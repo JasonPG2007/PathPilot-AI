@@ -22,7 +22,7 @@ function safeList(value) {
   return Array.isArray(value) && value.length ? value : ['None specified']
 }
 
-export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, currentPhase, generatedAt, resourcesByPhase }) {
+export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, currentPhase, generatedAt, resourcesByPhase, dashboard }) {
   const review = roadmap.criticReview || {}
   return {
     cover: {
@@ -35,6 +35,7 @@ export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, cu
       generatedAt: generatedAt || new Date().toISOString(),
     },
     summary: {
+      coach: roadmap.coachSummary,
       review: {
         riskLevel: review.riskLevel,
         issues: review.issues || review.issuesFound || [],
@@ -44,6 +45,13 @@ export function createRoadmapPdfModel({ learner, roadmap, strategy, progress, cu
       },
       progress,
       currentPhase,
+      dashboard: dashboard ?? {
+        remainingCount: Math.max(0, progress.totalCount - progress.completedCount),
+        strategy: strategyName(strategy),
+        estimatedFinish: { label: 'Not provided' },
+        nextAction: { title: 'Not provided' },
+        currentPhase,
+      },
     },
     phases: roadmap.phases.map((phase) => ({
       ...phase,
@@ -84,7 +92,11 @@ function createWriter(doc) {
   }
 
   function labelValue(label, value) {
-    pageBreak(9)
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(10)
+    const lines = doc.splitTextToSize(clean(value), CONTENT_WIDTH - 48)
+    const height = Math.max(7, lines.length * 4.8)
+    pageBreak(height + 2)
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(8)
     doc.setTextColor(...MUTED)
@@ -92,8 +104,8 @@ function createWriter(doc) {
     doc.setFont('helvetica', 'normal')
     doc.setFontSize(10)
     doc.setTextColor(...INK)
-    doc.text(clean(value), MARGIN + 48, y)
-    y += 7
+    doc.text(lines, MARGIN + 48, y)
+    y += height
   }
 
   function bullets(items) {
@@ -161,6 +173,18 @@ function addCover(doc, model) {
 function addSummary(doc, model) {
   doc.addPage()
   const writer = createWriter(doc)
+  writer.heading('AI Coach Insights', 1)
+  writer.labelValue('Strengths', model.summary.coach?.strengths)
+  writer.labelValue('Biggest challenge', model.summary.coach?.biggestChallenge)
+  writer.labelValue('Recommended strategy', model.summary.coach?.recommendedStrategy)
+  writer.labelValue('Next advice', model.summary.coach?.nextAdvice)
+  writer.heading('Journey Dashboard')
+  writer.labelValue('Completion', `${model.summary.progress.percentage}%`)
+  writer.labelValue('Completed / remaining', `${model.summary.progress.completedCount} / ${model.summary.dashboard.remainingCount}`)
+  writer.labelValue('Current phase', `${model.summary.dashboard.currentPhase} of ${model.phases.length}`)
+  writer.labelValue('Strategy', model.summary.dashboard.strategy)
+  writer.labelValue('Estimated finish', model.summary.dashboard.estimatedFinish.label)
+  writer.labelValue('Next milestone', model.summary.dashboard.nextAction.title)
   writer.heading('Roadmap Summary', 1)
   writer.labelValue('Progress', `${model.summary.progress.percentage}% complete`)
   writer.labelValue('Completion', `${model.summary.progress.completedCount} of ${model.summary.progress.totalCount} items`)

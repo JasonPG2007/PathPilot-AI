@@ -1,5 +1,6 @@
 const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5072').replace(/\/$/, '')
 const CACHE_KEY = 'pathpilotExplanationCache:v1'
+export const explanationCacheKey = CACHE_KEY
 const inFlightExplanations = new Map()
 
 export const explanationTextLimits = {

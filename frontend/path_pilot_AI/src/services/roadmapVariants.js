@@ -4,6 +4,12 @@ const STORAGE_KEY = 'pathpilotRoadmapStrategy:v1'
 const STORE_VERSION = 3
 const DETERMINISTIC_VARIANT_VERSION = 5
 
+export function clearRoadmapStrategyState() {
+  localStorage.removeItem(STORAGE_KEY)
+}
+
+export const roadmapStrategyStorageKey = STORAGE_KEY
+
 export const strategyDefinitions = {
   fast: { name: 'Fast Track', label: 'Faster, higher risk', description: 'Reach portfolio readiness sooner with higher weekly intensity and less depth.' },
   balanced: { name: 'Balanced', label: 'Recommended balance', description: 'Maintain a realistic balance between speed, depth, and weekly workload.' },
@@ -227,6 +233,10 @@ function createVariant(roadmap, strategy) {
     weeklyHours,
     feasibilityScore,
     confidenceScore: feasibilityScore,
+    coachSummary: roadmap.coachSummary ? {
+      ...roadmap.coachSummary,
+      recommendedStrategy: fast ? 'Fast' : 'Deep',
+    } : roadmap.coachSummary,
     phases,
     criticReview: {
       ...roadmap.criticReview,

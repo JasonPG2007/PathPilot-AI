@@ -3,10 +3,10 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiagramProject } from '@fortawesome/free-solid-svg-icons'
 import CriticReviewCard from '../components/roadmap/CriticReviewCard.jsx'
+import CoachSummaryCard from '../components/roadmap/CoachSummaryCard.jsx'
 import ExplanationPanel from '../components/roadmap/ExplanationPanel.jsx'
-import LearnerSummary from '../components/roadmap/LearnerSummary.jsx'
+import JourneyDashboard from '../components/roadmap/JourneyDashboard.jsx'
 import ProjectCard from '../components/roadmap/ProjectCard.jsx'
-import ProgressOverview from '../components/roadmap/ProgressOverview.jsx'
 import ReplanJourneyPanel from '../components/roadmap/ReplanJourneyPanel.jsx'
 import ReplanSummary from '../components/roadmap/ReplanSummary.jsx'
 import RoadmapActions from '../components/roadmap/RoadmapActions.jsx'
@@ -15,8 +15,10 @@ import RoadmapStrategySelector from '../components/roadmap/RoadmapStrategySelect
 import RoadmapTimeline from '../components/roadmap/RoadmapTimeline.jsx'
 import TrustedResourcesSection from '../components/roadmap/TrustedResourcesSection.jsx'
 import { getMostRecentRoadmap, getStoredRoadmap, hasActiveGenerationAttempt, storeReplannedRoadmap } from '../lib/roadmapSession.js'
-import { getMilestoneId, getProgress, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
+import { getMilestoneId, getSkillId, loadLearnerMemory, resetLearnerProgress, toggleCompletion, updateLearnerConstraints } from '../lib/learnerMemory.js'
+import { buildJourneyDashboard } from '../lib/journeyDashboard.js'
 import { formatTimeline } from '../lib/timelineFormat.js'
+import { startNewJourney } from '../lib/newJourney.js'
 import { requestReplan } from '../services/replanApi.js'
 import { requestExplanation } from '../services/explanationApi.js'
 import { recommendResourcesForRoadmap } from '../services/resourceRecommendations.js'
@@ -61,8 +63,9 @@ function RoadmapPage() {
     )
   }
 
-  const progress = getProgress(memory, roadmap)
-  const currentPhaseIndex = roadmap.phases.findIndex((phase) => phase.id === memory.currentPhase)
+  const dashboard = buildJourneyDashboard({ roadmap, memory, strategy: selectedStrategy })
+  const progress = dashboard.progress
+  const currentPhaseIndex = dashboard.currentPhase - 1
   const resourceRecommendations = recommendResourcesForRoadmap({ roadmap, learner: displayLearner, strategy: selectedStrategy })
 
   function handleToggle(type, id) {
@@ -153,6 +156,7 @@ function RoadmapPage() {
       strategy: selectedStrategy,
       progress,
       currentPhase: currentPhaseIndex + 1,
+      dashboard,
       generatedAt,
       resourcesByPhase: resourceRecommendations.byPhase,
     })
@@ -161,10 +165,10 @@ function RoadmapPage() {
   return (
     <div className="roadmap-page">
       <RoadmapHeader goal={roadmap.goal} />
-      <LearnerSummary learner={displayLearner} roadmap={roadmap} />
+      <CoachSummaryCard summary={roadmap.coachSummary} />
+      <JourneyDashboard dashboard={dashboard} />
       <RoadmapStrategySelector comparisons={getStrategyComparisons(strategyState)} onChange={handleStrategyChange} selectedStrategy={selectedStrategy} />
       {replanSummary && <ReplanSummary summary={replanSummary} />}
-      <ProgressOverview currentPhase={currentPhaseIndex + 1} phaseCount={roadmap.phases.length} progress={progress} />
       <div className="roadmap-content-grid roadmap-variant-transition" key={`timeline-${selectedStrategy}`}>
         <RoadmapTimeline memory={memory} onExplain={handleExplain} onToggleMilestone={(id) => handleToggle('milestone', id)} onToggleSkill={(id) => handleToggle('skill', id)} phases={roadmap.phases} resourcesByPhase={resourceRecommendations.byPhase} />
         <aside className="roadmap-sidebar">
@@ -185,7 +189,7 @@ function RoadmapPage() {
         <div className="project-grid">{roadmap.projects.map((project, index) => <ProjectCard key={project.id} onExplain={() => handleExplain({ itemId: `portfolio-project:${project.id}`, selectedItem: project.title, previousItem: roadmap.projects[index - 1]?.title ?? null, nextItem: roadmap.projects[index + 1]?.title ?? null, phaseTitle: 'Recommended Portfolio Projects' })} project={project} />)}</div>
       </section>
       <TrustedResourcesSection resources={resourceRecommendations.highlights} />
-      <RoadmapActions onDownloadPdf={handleDownloadPdf} onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} />
+      <RoadmapActions onDownloadPdf={handleDownloadPdf} onOpenReplan={() => { setReplanError(''); setReplanOpen(true) }} onResetProgress={handleResetProgress} onStartNewJourney={() => startNewJourney(navigate)} />
       {replanOpen && <ReplanJourneyPanel completedMilestones={completedMilestones} completedSkills={completedSkills} error={replanError} learner={displayLearner} onClose={() => { if (!replanPending) setReplanOpen(false) }} onSubmit={handleReplan} submitting={replanPending} />}
       {explanationContext && <ExplanationPanel error={explanationError} explanation={explanation} item={explanationContext.selectedItem} loading={explanationLoading} onClose={() => setExplanationContext(null)} onRetry={() => loadExplanation(explanationContext)} />}
     </div>

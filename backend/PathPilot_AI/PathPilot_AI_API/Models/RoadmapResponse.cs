@@ -7,10 +7,17 @@ public sealed record RoadmapResponse(
     int WeeklyHours,
     string StartingLevel,
     int FeasibilityScore,
+    CoachSummary CoachSummary,
     IReadOnlyList<RoadmapPhase> Phases,
     CriticReview CriticReview,
     IReadOnlyList<SkillVaultItem> SkillVault,
     IReadOnlyList<SuggestedProject> SuggestedProjects);
+
+public sealed record CoachSummary(
+    string Strengths,
+    string BiggestChallenge,
+    string RecommendedStrategy,
+    string NextAdvice);
 
 public sealed record RoadmapPhase(
     int Id,

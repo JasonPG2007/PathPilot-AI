@@ -35,6 +35,9 @@
   --shadow-sm: 0 2px 10px rgba(36, 30, 78, 0.05);
   --shadow-md: 0 16px 38px rgba(55, 48, 163, 0.1);
   --content-width: 72rem;
+  --list-icon-size: 0.9375rem;
+  --list-icon-box: 1.25rem;
+  --list-icon-gap: 0.625rem;
   color: var(--color-text);
   background: var(--color-background);
   font-family: var(--font-sans);
@@ -58,6 +61,12 @@ button:disabled, .button:disabled { cursor: not-allowed; opacity: 0.56; box-shad
 button:not(:disabled), .button { transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease; }
 button:not(:disabled):active, .button:active { transform: translateY(1px); }
 .status-icon--spinning { animation: shared-spin .8s linear infinite; }
+.semantic-list-item { display: flex; align-items: flex-start; gap: var(--list-icon-gap); }
+.semantic-list-icon { display: inline-flex; width: var(--list-icon-box); height: var(--list-icon-box); flex: 0 0 var(--list-icon-box); align-items: center; justify-content: center; line-height: 1; }
+.semantic-list-icon svg { width: var(--list-icon-size); height: var(--list-icon-size); }
+.semantic-list-icon--warning { color: #b8662e; }
+.semantic-list-icon--success { color: #168564; }
+.semantic-list-icon--info { color: var(--color-primary); }
 @keyframes shared-spin { to { transform: rotate(360deg); } }
 
 .app-shell { display: flex; min-height: 100vh; flex-direction: column; }

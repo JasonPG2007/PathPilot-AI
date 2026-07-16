@@ -1,8 +1,9 @@
 const ROADMAP_KEY = 'pathpilotRoadmap'
 const ATTEMPT_KEY = 'pathpilotGenerationAttempt'
+const RESET_KEY = 'pathpilotNewJourneyReset:v1'
 
 function devLog(message) {
-  if (import.meta.env.DEV) console.info(`[PathPilot] ${message}`)
+  if (import.meta.env?.DEV) console.info(`[PathPilot] ${message}`)
 }
 
 export function beginGenerationAttempt(id) {
@@ -74,7 +75,16 @@ function getVersionTime(state) {
 }
 
 export function getMostRecentRoadmap(...states) {
-  return states.filter(isValidRoadmapState).sort((left, right) => getVersionTime(right) - getVersionTime(left))[0] ?? null
+  let resetAt = 0
+  try {
+    resetAt = Date.parse(JSON.parse(sessionStorage.getItem(RESET_KEY))?.startedAt) || 0
+  } catch {
+    resetAt = 0
+  }
+  return states
+    .filter(isValidRoadmapState)
+    .filter((state) => getVersionTime(state) >= resetAt)
+    .sort((left, right) => getVersionTime(right) - getVersionTime(left))[0] ?? null
 }
 
 export function getStoredRoadmap() {
@@ -90,5 +100,19 @@ export function getStoredRoadmap() {
 export function hasActiveGenerationAttempt() {
   return sessionStorage.getItem(ATTEMPT_KEY) !== null
 }
+
+export function clearRoadmapSession() {
+  const active = getStoredRoadmap()
+  sessionStorage.removeItem(ROADMAP_KEY)
+  sessionStorage.removeItem(ATTEMPT_KEY)
+  devLog('old active roadmap cleared')
+  return active
+}
+
+export function markNewJourneyReset(id) {
+  sessionStorage.setItem(RESET_KEY, JSON.stringify({ id, startedAt: new Date().toISOString() }))
+}
+
+export const roadmapSessionKeys = { roadmap: ROADMAP_KEY, attempt: ATTEMPT_KEY, reset: RESET_KEY }
 
 export { devLog }

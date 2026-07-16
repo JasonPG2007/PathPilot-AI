@@ -49,7 +49,7 @@ public sealed class OpenAIReplanRoadmapService : IReplanRoadmapService
             response = await _responsesClient.CreateStructuredResponseAsync(
                 apiKey,
                 model,
-                "Return exactly one schema-compliant revised roadmap JSON object with no markdown or extra text. Revise unfinished work only; completed items are immutable in text, phase, index, and position. Preserve goal, starting level, all three phases, current phase, phase IDs, every required project field, skillVault, and suggestedProjects. Apply the new timeline and weekly hours, and keep risk and feasibility consistent. Keep the replan summary concise and specific. Each phase description and milestone must be at most one concise sentence. Each skill and prerequisite must be a concise phrase. Critic issues: at most 3. Changes made: at most 4. Timeline adjustment and prerequisite correction: at most one concise sentence each. Each project description: at most one concise sentence. Do not repeat learner constraints across fields.",
+                "Return exactly one schema-compliant revised roadmap JSON object with no markdown or extra text. Revise unfinished work only; completed items are immutable in text, phase, index, and position. Preserve goal, starting level, all three phases, current phase, phase IDs, every required project field, skillVault, and suggestedProjects. Apply the new timeline and weekly hours, and keep risk and feasibility consistent. Regenerate coachSummary in this same response; each field is at most one concise paragraph and recommendedStrategy must match selectedStrategy: Fast for fast, Balanced for balanced, or Deep for deep. Keep the replan summary concise and specific. Each phase description and milestone must be at most one concise sentence. Each skill and prerequisite must be a concise phrase. Critic issues: at most 3. Changes made: at most 4. Timeline adjustment and prerequisite correction: at most one concise sentence each. Each project description: at most one concise sentence. Do not repeat learner constraints across fields.",
                 input,
                 "replanned_roadmap",
                 RoadmapJsonSchemas.Roadmap,
@@ -176,6 +176,10 @@ public sealed class OpenAIReplanRoadmapService : IReplanRoadmapService
         timeline.Contains("Fast Track", StringComparison.OrdinalIgnoreCase) ? "fast" :
         timeline.Contains("Deep Mastery", StringComparison.OrdinalIgnoreCase) ? "deep" : "balanced";
 
+    private static string GetStrategyLabel(string timeline) =>
+        timeline.Contains("Fast Track", StringComparison.OrdinalIgnoreCase) ? "Fast" :
+        timeline.Contains("Deep Mastery", StringComparison.OrdinalIgnoreCase) ? "Deep" : "Balanced";
+
     private static ValidationFailure? GetValidationFailure(RoadmapResponse roadmap, ReplanRoadmapRequest request)
     {
         var original = request.CurrentRoadmap!;
@@ -187,6 +191,8 @@ public sealed class OpenAIReplanRoadmapService : IReplanRoadmapService
         if (roadmap.Timeline != constraints.Timeline) return new("the updated timeline was not applied", false);
         if (roadmap.WeeklyHours != constraints.WeeklyHours) return new("the updated weekly hours were not applied", false);
         if (string.IsNullOrWhiteSpace(roadmap.Summary)) return new("replanSummary was empty", false);
+        if (roadmap.CoachSummary is null) return new("coachSummary was missing", false);
+        if (roadmap.CoachSummary.RecommendedStrategy != GetStrategyLabel(original.Timeline)) return new("coachSummary recommendedStrategy did not match the selected strategy", false);
         if (roadmap.Phases is not { Count: > 0 }) return new("phases was empty", false);
         if (progress.CurrentPhase is int currentPhase && roadmap.Phases.All(phase => phase.Id != currentPhase)) return new("the current phase was removed", false);
         if (roadmap.CriticReview is null) return new("criticReview was missing", false);

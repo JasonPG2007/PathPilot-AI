@@ -3,7 +3,7 @@ import test from 'node:test'
 import { restoreCompletedRoadmapItems } from '../src/services/roadmapVariants.js'
 
 const requiredRoadmapProperties = [
-  'goal', 'summary', 'timeline', 'weeklyHours', 'startingLevel', 'feasibilityScore',
+  'goal', 'summary', 'timeline', 'weeklyHours', 'startingLevel', 'feasibilityScore', 'coachSummary',
   'phases', 'criticReview', 'skillVault', 'suggestedProjects',
 ]
 
@@ -27,6 +27,12 @@ function representativeRoadmap() {
     weeklyHours: 10,
     startingLevel: 'Beginner',
     feasibilityScore: 68,
+    coachSummary: {
+      strengths: 'The learner has a clear role target and a practical learning orientation.',
+      biggestChallenge: 'Maintaining consistent project practice alongside prerequisite study will require discipline.',
+      recommendedStrategy: 'Balanced',
+      nextAdvice: 'Begin the first unfinished foundation milestone and reserve a recurring weekly project block.',
+    },
     phases,
     criticReview: {
       riskLevel: 'Medium',

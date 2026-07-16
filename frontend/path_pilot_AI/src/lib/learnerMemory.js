@@ -103,3 +103,16 @@ export function getProgress(memory, roadmap) {
   const totalCount = trackable.skills.length + trackable.milestones.length
   return { completedCount, totalCount, percentage: totalCount ? Math.round((completedCount / totalCount) * 100) : 0 }
 }
+
+export function clearLearnerMemory(roadmapId) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(LEARNER_MEMORY_KEY))
+    if (!stored || !roadmapId || stored.roadmapId === roadmapId) {
+      localStorage.removeItem(LEARNER_MEMORY_KEY)
+    }
+  } catch {
+    localStorage.removeItem(LEARNER_MEMORY_KEY)
+  }
+}
+
+export const learnerMemoryKey = LEARNER_MEMORY_KEY

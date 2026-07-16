@@ -23,6 +23,11 @@ public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
             WeeklyHours: request.WeeklyHours,
             StartingLevel: request.CurrentLevel,
             FeasibilityScore: GetFeasibilityScore(request.WeeklyHours),
+            CoachSummary: new CoachSummary(
+                existingSkills.Length > 0 ? $"Your existing {string.Join(", ", existingSkills.Take(2))} foundation gives you useful momentum." : "Your clear role goal and willingness to build practical evidence provide a strong starting point.",
+                $"Maintaining consistent weekly practice while progressing toward {goalPhrases.Direction} will be the main challenge.",
+                "Balanced",
+                "Begin with the first foundation milestone and protect a recurring weekly project block."),
             Phases:
             [
                 new RoadmapPhase(
@@ -97,6 +102,12 @@ public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
             Timeline = constraints.Timeline,
             WeeklyHours = constraints.WeeklyHours,
             FeasibilityScore = score,
+            CoachSummary = roadmap.CoachSummary with
+            {
+                BiggestChallenge = $"The revised plan must account for {constraints.MainDifficulty.ToLowerInvariant()} without disrupting completed work.",
+                RecommendedStrategy = GetStrategy(constraints.Timeline),
+                NextAdvice = $"Use the next study block to begin the first unfinished milestone at {constraints.WeeklyHours} hours per week."
+            },
             Phases = phases,
             CriticReview = roadmap.CriticReview with
             {
@@ -110,6 +121,10 @@ public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
 
         return Task.FromResult(revised);
     }
+
+    private static string GetStrategy(string timeline) =>
+        timeline.Contains("Fast Track", StringComparison.OrdinalIgnoreCase) ? "Fast" :
+        timeline.Contains("Deep Mastery", StringComparison.OrdinalIgnoreCase) ? "Deep" : "Balanced";
 
     private static (string RiskLevel, int Score) GetReplanRisk(int weeklyHours, string difficulty)
     {

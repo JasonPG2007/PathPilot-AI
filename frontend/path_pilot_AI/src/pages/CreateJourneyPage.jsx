@@ -9,6 +9,7 @@ import LiveSummaryCard from "../components/create/LiveSummaryCard.jsx";
 import SelectField from "../components/create/SelectField.jsx";
 import SkillChipInput from "../components/create/SkillChipInput.jsx";
 import { beginGenerationAttempt, devLog } from "../lib/roadmapSession.js";
+import { createGenerationId } from "../lib/newJourney.js";
 import "../styles/create-journey.css";
 
 const levelOptions = ["Beginner", "Mid-level", "Advanced"];
@@ -44,7 +45,7 @@ function CreateJourneyPage() {
     }
     submitGuard.current = true;
     setIsSubmitting(true);
-    const generationId = crypto.randomUUID();
+    const generationId = createGenerationId();
     beginGenerationAttempt(generationId);
     navigate("/processing", {
       state: {

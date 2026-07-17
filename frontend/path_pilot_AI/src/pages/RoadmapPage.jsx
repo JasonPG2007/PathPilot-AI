@@ -210,7 +210,7 @@ function RoadmapPage() {
 
   return (
     <div className="roadmap-page">
-      <RoadmapHeader goal={roadmap.goal} />
+      <RoadmapHeader goal={roadmap.goal} learnerGoal={displayLearner.goal} summary={roadmap.summary} />
       <CoachSummaryCard summary={roadmap.coachSummary} />
       <JourneyDashboard dashboard={dashboard} />
       <AchievementsSection announcement={achievementAnnouncement} badges={achievementResult.badges} />

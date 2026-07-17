@@ -92,7 +92,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 RevisionMaxOutputTokens,
                 GetRoadmapValidationFailure,
                 cancellationToken);
-            var normalizedRoadmap = NormalizeFeasibilityScore(finalRoadmap);
+            var normalizedRoadmap = NormalizeRoadmapTitle(NormalizeFeasibilityScore(finalRoadmap), request.Goal);
             await ReportProgressAsync(reportProgress, "revision_completed", "revision");
             return normalizedRoadmap;
         }
@@ -433,6 +433,14 @@ public sealed class OpenAIRoadmapService : IRoadmapService
         }
 
         return roadmap with { FeasibilityScore = normalizedScore };
+    }
+
+    private RoadmapResponse NormalizeRoadmapTitle(RoadmapResponse roadmap, string learnerGoal)
+    {
+        var title = RoadmapTitleNormalizer.Normalize(roadmap.Goal, learnerGoal);
+        if (title == roadmap.Goal) return roadmap;
+        if (_environment.IsDevelopment()) _logger.LogInformation("Roadmap title normalized to the concise learner goal.");
+        return roadmap with { Goal = title };
     }
 
     private static string GetHttpFailureDetail(string stageName, int statusCode)

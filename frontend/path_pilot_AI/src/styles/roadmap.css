@@ -4,7 +4,9 @@
 .roadmap-breadcrumb span { margin-inline: 0.4rem; color: #b3b5c0; }
 .roadmap-header > div { display: flex; align-items: flex-end; justify-content: space-between; gap: 1rem; }
 .roadmap-kicker { margin-bottom: 0.45rem; color: var(--color-primary); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.1em; }
-.roadmap-header h1 { margin: 0; font-size: clamp(2rem, 4.5vw, 3.6rem); }
+.roadmap-header__copy { min-width: 0; max-width: 52rem; }
+.roadmap-header h1 { max-width: 100%; margin: 0; overflow-wrap: anywhere; font-size: clamp(2rem, 4.5vw, 3.6rem); text-wrap: balance; }
+.roadmap-header__outcome { max-width: 48rem; margin: 0.8rem 0 0; color: var(--color-text-muted); font-size: var(--font-size-body-lg); line-height: 1.55; }
 .roadmap-ready-badge, .execution-badge { padding: 0.45rem 0.75rem; border-radius: 99rem; color: #168564; background: #e7faf3; font-size: 0.62rem; font-weight: 800; white-space: nowrap; }
 .learner-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 2rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); }
 .learner-summary > div { display: flex; min-height: 5.5rem; align-items: center; gap: 0.75rem; padding: 1rem 1.4rem; border-right: 1px solid var(--color-border-soft); }

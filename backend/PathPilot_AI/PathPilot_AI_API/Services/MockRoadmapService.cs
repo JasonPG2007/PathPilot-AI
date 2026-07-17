@@ -21,7 +21,7 @@ public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
         var prerequisites = existingSkills.Length > 0 ? existingSkills : ["Basic digital literacy"];
 
         var roadmap = new RoadmapResponse(
-            Goal: goal,
+            Goal: RoadmapTitleNormalizer.Normalize(goal, goal),
             Summary: $"A practical {request.Timeline.ToLowerInvariant()} roadmap for a {request.CurrentLevel.ToLowerInvariant()} learner pursuing {goalPhrases.Pursuit} through {request.LearningStyle.ToLowerInvariant()}-first study.",
             Timeline: request.Timeline,
             WeeklyHours: request.WeeklyHours,

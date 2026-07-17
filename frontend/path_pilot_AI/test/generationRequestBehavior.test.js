@@ -8,6 +8,7 @@ import {
   generateRoadmap,
 } from '../src/services/roadmapApi.js'
 import { REPLAN_TIMEOUT_MS } from '../src/services/replanApi.js'
+import { applyStageEvent, initialAgentStates } from '../src/lib/processingStages.js'
 
 const learner = {
   level: 'Beginner',
@@ -160,4 +161,23 @@ test('StrictMode duplicate subscriber receives progress from the single POST', a
   assert.equal(calls, 1)
   assert.deepEqual(firstEvents, ['planner_started', 'completed'])
   assert.deepEqual(secondEvents, ['planner_started', 'completed'])
+})
+
+test('completed events atomically activate the guaranteed next stage', () => {
+  const expected = [
+    ['active', 'waiting', 'waiting'],
+    ['completed', 'active', 'waiting'],
+    ['completed', 'active', 'waiting'],
+    ['completed', 'completed', 'active'],
+    ['completed', 'completed', 'active'],
+    ['completed', 'completed', 'completed'],
+  ]
+  const events = ['planner_started', 'planner_completed', 'critic_started', 'critic_completed', 'revision_started', 'revision_completed']
+  let states = initialAgentStates
+  events.forEach((event, index) => {
+    states = applyStageEvent(states, event)
+    assert.deepEqual(states, expected[index])
+    const activeCount = states.filter((state) => state === 'active').length
+    assert.equal(activeCount, event === 'revision_completed' ? 0 : 1)
+  })
 })

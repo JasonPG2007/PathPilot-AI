@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faArrowRight, faCircleCheck, faRoute, faWandSparkles } from '@fortawesome/free-solid-svg-icons'
@@ -7,6 +7,7 @@ import ProcessingError from '../components/processing/ProcessingError.jsx'
 import { demoLearnerProfile } from '../data/mockRoadmap.js'
 import { generateRoadmap, releaseGenerationRequest } from '../services/roadmapApi.js'
 import { beginGenerationAttempt, devLog, failGenerationAttempt, storeGeneratedRoadmap } from '../lib/roadmapSession.js'
+import { applyStageEvent, initialAgentStates, progressByEvent } from '../lib/processingStages.js'
 import '../styles/processing.css'
 
 const agents = [
@@ -14,17 +15,6 @@ const agents = [
   { name: 'Critic Agent', role: 'Quality and feasibility review', icon: 'C', tasks: ['Checking timeline feasibility', 'Reviewing prerequisite order', 'Balancing weekly workload', 'Identifying risks'] },
   { name: 'Planner Revision', role: 'Final roadmap refinement', icon: 'R', tasks: ['Applying critic feedback', 'Refining milestones', 'Finalizing the roadmap'] },
 ]
-
-const initialAgentStates = ['waiting', 'waiting', 'waiting']
-const progressByEvent = {
-  planner_started: { index: 0, state: 'active', progress: 8, status: 'Planner Agent is building your initial roadmap' },
-  planner_completed: { index: 0, state: 'completed', progress: 30, status: 'Planner Agent completed the initial roadmap' },
-  critic_started: { index: 1, state: 'active', progress: 38, status: 'Critic Agent is reviewing feasibility and risk' },
-  critic_completed: { index: 1, state: 'completed', progress: 60, status: 'Critic Agent completed its review' },
-  revision_started: { index: 2, state: 'active', progress: 68, status: 'Planner Agent is applying the critic’s feedback' },
-  revision_completed: { index: 2, state: 'completed', progress: 92, status: 'Finalizing your personalized roadmap...' },
-  completed: { progress: 100, status: 'Your personalized roadmap is ready' },
-}
 
 const initializedAttempts = new Set()
 
@@ -37,6 +27,7 @@ function ProcessingPage() {
   const [roadmap, setRoadmap] = useState(null)
   const [error, setError] = useState('')
   const [requestAttempt, setRequestAttempt] = useState(0)
+  const lastEventTimestamp = useRef(null)
   const [directGenerationId] = useState(() => crypto.randomUUID())
   const learner = location.state?.learner ?? demoLearnerProfile
   const generationId = location.state?.generationId ?? directGenerationId
@@ -60,12 +51,13 @@ function ProcessingPage() {
       }
       const update = progressByEvent[event.type]
       if (!update) return
-      devLog(`generation progress ${event.type}`)
+      const receivedAt = performance.now()
+      const gap = lastEventTimestamp.current === null ? 0 : receivedAt - lastEventTimestamp.current
+      lastEventTimestamp.current = receivedAt
+      devLog(`generation progress ${event.type} receivedAt=${new Date().toISOString()} gapMs=${gap.toFixed(1)}`)
       setProgress(update.progress)
       setStatus(update.status)
-      if (Number.isInteger(update.index)) {
-        setAgentStates((states) => states.map((state, index) => index === update.index ? update.state : state))
-      }
+      setAgentStates((states) => applyStageEvent(states, event.type))
     }
 
     generateRoadmap(learner, requestId, { onProgress })
@@ -96,6 +88,7 @@ function ProcessingPage() {
     setAgentStates(initialAgentStates)
     setProgress(0)
     setStatus('Waiting for the Planner Agent to start')
+    lastEventTimestamp.current = null
     setRequestAttempt((attempt) => attempt + 1)
   }
 

@@ -38,6 +38,7 @@ public sealed class RoadmapsController : ControllerBase
 
         var workflowTimer = Stopwatch.StartNew();
         var stageTimer = Stopwatch.StartNew();
+        var eventGapTimer = Stopwatch.StartNew();
         string? activeStage = null;
 
         try
@@ -49,12 +50,16 @@ public sealed class RoadmapsController : ControllerBase
                 if (_environment.IsDevelopment())
                 {
                     _logger.LogInformation(
-                        "Generation progress {EventName} for {Stage}; elapsed {ElapsedMs}ms.",
+                        "Generation progress {EventName} for {Stage}; TimestampUtc={TimestampUtc} StageElapsedMs={StageElapsedMs} WorkflowElapsedMs={WorkflowElapsedMs} PreviousEventGapMs={PreviousEventGapMs}.",
                         progress.EventName,
                         progress.Stage,
-                        stageTimer.ElapsedMilliseconds);
+                        DateTimeOffset.UtcNow,
+                        stageTimer.ElapsedMilliseconds,
+                        workflowTimer.ElapsedMilliseconds,
+                        eventGapTimer.ElapsedMilliseconds);
                 }
                 await WriteStreamEventAsync(progress.EventName, new { stage = progress.Stage }, cancellationToken);
+                eventGapTimer.Restart();
             });
 
             await WriteStreamEventAsync("completed", roadmap, cancellationToken);

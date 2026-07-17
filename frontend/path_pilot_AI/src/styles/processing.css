@@ -99,7 +99,7 @@
 .agent-stage { position: relative; min-width: 0; }
 .agent-status-card { height: 100%; min-height: 19.5rem; padding: 1.4rem; border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg); background: #fff; box-shadow: var(--shadow-sm); transition: border-color 300ms ease, box-shadow 300ms ease, opacity 300ms ease, transform 300ms ease; }
 .agent-status-card--waiting { opacity: 0.58; }
-.agent-status-card--active { border-color: rgba(79, 70, 229, 0.45); box-shadow: 0 14px 32px rgba(79, 70, 229, 0.12); transform: translateY(-0.25rem); }
+.agent-status-card--active { border-color: rgba(79, 70, 229, 0.45); box-shadow: 0 14px 32px rgba(79, 70, 229, 0.12); transform: translateY(-0.25rem); animation: agent-working 1.8s ease-in-out infinite; }
 .agent-status-card--completed { border-color: rgba(59, 191, 154, 0.38); }
 .agent-status-card--failed { border-color: rgba(190, 72, 49, 0.45); box-shadow: 0 12px 28px rgba(190, 72, 49, 0.1); }
 .agent-card-heading { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0.8rem; padding-bottom: 1.2rem; border-bottom: 1px solid var(--color-border-soft); }
@@ -147,9 +147,12 @@
 @keyframes orbit-spin { to { transform: rotate(360deg); } }
 @keyframes status-pulse { 50% { opacity: 0.35; transform: scale(0.8); } }
 @keyframes task-fade { from { opacity: 0; transform: translateY(0.25rem); } }
+@keyframes agent-working {
+  50% { border-color: rgba(79, 70, 229, 0.7); box-shadow: 0 16px 36px rgba(79, 70, 229, 0.18); }
+}
 
 @media (prefers-reduced-motion: reduce) {
-  .orbit-ring, .agent-state--active > span, .agent-status-card--active li > span, .agent-status-card--active li { animation: none; }
+  .orbit-ring, .agent-status-card--active, .agent-state--active > span, .agent-status-card--active li > span, .agent-status-card--active li { animation: none; }
   .progress-track > span, .agent-status-card, .completion-message { transition: none; }
 }
 

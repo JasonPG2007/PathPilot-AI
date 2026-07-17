@@ -4,5 +4,8 @@ namespace PathPilot_AI_API.Services;
 
 public interface IRoadmapService
 {
-    Task<RoadmapResponse> GenerateAsync(GenerateRoadmapRequest request, CancellationToken cancellationToken);
+    Task<RoadmapResponse> GenerateAsync(
+        GenerateRoadmapRequest request,
+        CancellationToken cancellationToken,
+        Func<RoadmapGenerationProgress, ValueTask>? reportProgress = null);
 }

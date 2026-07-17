@@ -5,16 +5,9 @@ import { faArrowRight, faCircleCheck, faRoute, faWandSparkles } from '@fortaweso
 import AgentStatusCard from '../components/processing/AgentStatusCard.jsx'
 import ProcessingError from '../components/processing/ProcessingError.jsx'
 import { demoLearnerProfile } from '../data/mockRoadmap.js'
-import { generateRoadmap } from '../services/roadmapApi.js'
+import { generateRoadmap, releaseGenerationRequest } from '../services/roadmapApi.js'
 import { beginGenerationAttempt, devLog, failGenerationAttempt, storeGeneratedRoadmap } from '../lib/roadmapSession.js'
 import '../styles/processing.css'
-
-const workflowStages = [
-  { progress: 18, status: 'Planner Agent is building your initial roadmap' },
-  { progress: 45, status: 'Critic Agent is reviewing feasibility and risk' },
-  { progress: 76, status: 'Planner Agent is applying the critic’s feedback' },
-  { progress: 100, status: 'Your personalized roadmap is ready' },
-]
 
 const agents = [
   { name: 'Planner Agent', role: 'Roadmap architect', icon: 'P', tasks: ['Understanding the learner’s goal', 'Breaking the goal into phases', 'Estimating weekly workload', 'Selecting practical projects'] },
@@ -22,19 +15,25 @@ const agents = [
   { name: 'Planner Revision', role: 'Final roadmap refinement', icon: 'R', tasks: ['Applying critic feedback', 'Refining milestones', 'Finalizing the roadmap'] },
 ]
 
-const initializedAttempts = new Set()
-
-function getAgentState(agentIndex, stage) {
-  if (stage > agentIndex) return 'completed'
-  if (stage === agentIndex) return 'active'
-  return 'waiting'
+const initialAgentStates = ['waiting', 'waiting', 'waiting']
+const progressByEvent = {
+  planner_started: { index: 0, state: 'active', progress: 8, status: 'Planner Agent is building your initial roadmap' },
+  planner_completed: { index: 0, state: 'completed', progress: 30, status: 'Planner Agent completed the initial roadmap' },
+  critic_started: { index: 1, state: 'active', progress: 38, status: 'Critic Agent is reviewing feasibility and risk' },
+  critic_completed: { index: 1, state: 'completed', progress: 60, status: 'Critic Agent completed its review' },
+  revision_started: { index: 2, state: 'active', progress: 68, status: 'Planner Agent is applying the critic’s feedback' },
+  revision_completed: { index: 2, state: 'completed', progress: 92, status: 'Finalizing your personalized roadmap...' },
+  completed: { progress: 100, status: 'Your personalized roadmap is ready' },
 }
+
+const initializedAttempts = new Set()
 
 function ProcessingPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const [stage, setStage] = useState(0)
-  const [animationCompleted, setAnimationCompleted] = useState(false)
+  const [agentStates, setAgentStates] = useState(initialAgentStates)
+  const [progress, setProgress] = useState(0)
+  const [status, setStatus] = useState('Waiting for the Planner Agent to start')
   const [roadmap, setRoadmap] = useState(null)
   const [error, setError] = useState('')
   const [requestAttempt, setRequestAttempt] = useState(0)
@@ -42,17 +41,6 @@ function ProcessingPage() {
   const learner = location.state?.learner ?? demoLearnerProfile
   const generationId = location.state?.generationId ?? directGenerationId
   const requestId = `${generationId}:${requestAttempt}`
-  const currentStage = workflowStages[stage]
-
-  useEffect(() => {
-    const timers = [
-      window.setTimeout(() => setStage(1), 1300),
-      window.setTimeout(() => setStage(2), 2700),
-      window.setTimeout(() => setStage(3), 4100),
-      window.setTimeout(() => setAnimationCompleted(true), 5200),
-    ]
-    return () => timers.forEach((timer) => window.clearTimeout(timer))
-  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -60,40 +48,66 @@ function ProcessingPage() {
       initializedAttempts.add(requestId)
       beginGenerationAttempt(requestId)
     }
-    generateRoadmap(learner, requestId)
+
+    const onProgress = (event) => {
+      if (cancelled) return
+      if (event.type === 'failed') {
+        const failedIndex = { planner: 0, critic: 1, revision: 2 }[event.stage]
+        setAgentStates((states) => states.map((state, index) => (
+          index === failedIndex || (failedIndex === undefined && state === 'active') ? 'failed' : state
+        )))
+        return
+      }
+      const update = progressByEvent[event.type]
+      if (!update) return
+      devLog(`generation progress ${event.type}`)
+      setProgress(update.progress)
+      setStatus(update.status)
+      if (Number.isInteger(update.index)) {
+        setAgentStates((states) => states.map((state, index) => index === update.index ? update.state : state))
+      }
+    }
+
+    generateRoadmap(learner, requestId, { onProgress })
       .then((result) => { if (!cancelled) setRoadmap(result) })
       .catch((requestError) => {
         if (!cancelled) {
           failGenerationAttempt(requestId)
+          setAgentStates((states) => states.map((state) => state === 'active' ? 'failed' : state))
           setError(requestError.message)
         }
       })
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      releaseGenerationRequest(requestId, onProgress)
+    }
   }, [learner, requestId])
 
   useEffect(() => {
-    if (!animationCompleted || !roadmap) return
+    if (!roadmap) return
     const navigationState = storeGeneratedRoadmap({ learner, roadmap, generationId })
     devLog('navigation to /roadmap')
     navigate('/roadmap', { state: navigationState })
-  }, [animationCompleted, generationId, learner, navigate, roadmap])
+  }, [generationId, learner, navigate, roadmap])
 
   function retryRequest() {
     setError('')
     setRoadmap(null)
+    setAgentStates(initialAgentStates)
+    setProgress(0)
+    setStatus('Waiting for the Planner Agent to start')
     setRequestAttempt((attempt) => attempt + 1)
   }
 
-  if (error) {
-    return <div className="processing-page processing-page--error"><ProcessingError message={error} onRetry={retryRequest} /></div>
-  }
+  const isComplete = progress === 100
+  const isFinalizing = agentStates[2] === 'completed' && !roadmap
 
   return (
     <div className="processing-page">
       <section className="processing-hero">
-        <div className={`processing-orbit${stage === 3 ? ' processing-orbit--complete' : ''}`} aria-hidden="true">
+        <div className={`processing-orbit${isComplete ? ' processing-orbit--complete' : ''}`} aria-hidden="true">
           <span className="orbit-ring" />
-          <span className="orbit-core"><FontAwesomeIcon icon={stage === 3 ? faCircleCheck : faWandSparkles} /></span>
+          <span className="orbit-core"><FontAwesomeIcon icon={isComplete ? faCircleCheck : faWandSparkles} /></span>
         </div>
         <p className="processing-eyebrow">MULTI-AGENT ORCHESTRATION</p>
         <h1>Creating Your Personalized Learning Journey</h1>
@@ -102,23 +116,25 @@ function ProcessingPage() {
 
       <section className="workflow-panel" aria-label="Roadmap generation progress">
         <div className="overall-progress">
-          <div><span aria-live="polite">{animationCompleted && !roadmap ? 'Finalizing your personalized roadmap...' : currentStage.status}</span><strong>{currentStage.progress}%</strong></div>
-          <div aria-label={`${currentStage.progress}% complete`} aria-valuemax="100" aria-valuemin="0" aria-valuenow={currentStage.progress} className="progress-track" role="progressbar"><span style={{ width: `${currentStage.progress}%` }} /></div>
+          <div><span aria-live="polite">{status}</span><strong>{progress}%</strong></div>
+          <div aria-label={`${progress}% complete`} aria-valuemax="100" aria-valuemin="0" aria-valuenow={progress} className="progress-track" role="progressbar"><span style={{ width: `${progress}%` }} /></div>
         </div>
 
         <div className="agent-workflow">
           {agents.map((agent, index) => (
             <div className="agent-stage" key={agent.name}>
-              <AgentStatusCard {...agent} state={getAgentState(index, stage)} />
-              {index < agents.length - 1 && <div className={`workflow-connector${stage > index ? ' workflow-connector--complete' : ''}`} aria-hidden="true"><span><FontAwesomeIcon icon={faArrowRight} /></span></div>}
+              <AgentStatusCard {...agent} state={agentStates[index]} />
+              {index < agents.length - 1 && <div className={`workflow-connector${agentStates[index] === 'completed' ? ' workflow-connector--complete' : ''}`} aria-hidden="true"><span><FontAwesomeIcon icon={faArrowRight} /></span></div>}
             </div>
           ))}
         </div>
 
-        <div className={`completion-message${stage === 3 ? ' completion-message--visible' : ''}`} aria-live="polite">
-          <span><FontAwesomeIcon aria-hidden="true" icon={stage === 3 ? faCircleCheck : faRoute} /></span>
-          <div><strong>{roadmap ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{roadmap ? 'Opening your personalized learning journey…' : animationCompleted ? 'Finalizing your personalized roadmap... This can take up to a few minutes on free hosting.' : 'The agents are refining your learning journey…'}</p></div>
+        <div className={`completion-message${isFinalizing || isComplete ? ' completion-message--visible' : ''}`} aria-live="polite">
+          <span><FontAwesomeIcon aria-hidden="true" icon={isComplete ? faCircleCheck : faRoute} /></span>
+          <div><strong>{isComplete ? 'Roadmap complete' : 'Final checks in progress'}</strong><p>{isComplete ? 'Opening your personalized learning journey…' : 'Finalizing your personalized roadmap... This can take up to a few minutes on free hosting.'}</p></div>
         </div>
+
+        {error && <div className="processing-workflow-error"><ProcessingError message={error} onRetry={retryRequest} /></div>}
       </section>
       <p className="processing-note">Please keep this page open. You’ll be redirected automatically.</p>
     </div>

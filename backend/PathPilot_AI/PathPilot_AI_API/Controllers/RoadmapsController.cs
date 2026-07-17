@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using PathPilot_AI_API.Models;
 using PathPilot_AI_API.Services;
@@ -12,14 +14,90 @@ public sealed class RoadmapsController : ControllerBase
     private readonly IReplanRoadmapService _replanService;
     private readonly IRoadmapExplanationService _explanationService;
     private readonly ILogger<RoadmapsController> _logger;
+    private readonly IWebHostEnvironment _environment;
+    private static readonly JsonSerializerOptions StreamJsonOptions = new(JsonSerializerDefaults.Web);
 
-    public RoadmapsController(IRoadmapService roadmapService, IReplanRoadmapService replanService, IRoadmapExplanationService explanationService, ILogger<RoadmapsController> logger)
+    public RoadmapsController(IRoadmapService roadmapService, IReplanRoadmapService replanService, IRoadmapExplanationService explanationService, ILogger<RoadmapsController> logger, IWebHostEnvironment environment)
     {
         _roadmapService = roadmapService;
         _replanService = replanService;
         _explanationService = explanationService;
         _logger = logger;
+        _environment = environment;
     }
+
+    [HttpPost("generate/stream")]
+    public async Task GenerateStream(
+        [FromBody] GenerateRoadmapRequest request,
+        CancellationToken cancellationToken)
+    {
+        Response.StatusCode = StatusCodes.Status200OK;
+        Response.ContentType = "text/event-stream";
+        Response.Headers.CacheControl = "no-cache, no-store";
+        Response.Headers.Append("X-Accel-Buffering", "no");
+
+        var workflowTimer = Stopwatch.StartNew();
+        var stageTimer = Stopwatch.StartNew();
+        string? activeStage = null;
+
+        try
+        {
+            var roadmap = await _roadmapService.GenerateAsync(request, cancellationToken, async progress =>
+            {
+                activeStage = progress.Stage;
+                if (progress.EventName.EndsWith("_started", StringComparison.Ordinal)) stageTimer.Restart();
+                if (_environment.IsDevelopment())
+                {
+                    _logger.LogInformation(
+                        "Generation progress {EventName} for {Stage}; elapsed {ElapsedMs}ms.",
+                        progress.EventName,
+                        progress.Stage,
+                        stageTimer.ElapsedMilliseconds);
+                }
+                await WriteStreamEventAsync(progress.EventName, new { stage = progress.Stage }, cancellationToken);
+            });
+
+            await WriteStreamEventAsync("completed", roadmap, cancellationToken);
+            if (_environment.IsDevelopment())
+            {
+                _logger.LogInformation("Generation stream completed in {ElapsedMs}ms.", workflowTimer.ElapsedMilliseconds);
+            }
+        }
+        catch (OperationCanceledException) when (HttpContext.RequestAborted.IsCancellationRequested)
+        {
+            _logger.LogInformation("Generation stream stopped because the client disconnected after {ElapsedMs}ms.", workflowTimer.ElapsedMilliseconds);
+        }
+        catch (Exception exception)
+        {
+            var detail = GetSafeGenerationFailure(exception);
+            _logger.LogWarning(
+                "Generation stream failed during {Stage} after {ElapsedMs}ms: {FailureType}.",
+                activeStage ?? "startup",
+                workflowTimer.ElapsedMilliseconds,
+                exception.GetType().Name);
+
+            if (!HttpContext.RequestAborted.IsCancellationRequested)
+            {
+                await WriteStreamEventAsync("failed", new { stage = activeStage, detail }, CancellationToken.None);
+            }
+        }
+    }
+
+    private async ValueTask WriteStreamEventAsync(string eventName, object data, CancellationToken cancellationToken)
+    {
+        var json = JsonSerializer.Serialize(data, StreamJsonOptions);
+        await Response.WriteAsync($"event: {eventName}\ndata: {json}\n\n", cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
+    }
+
+    private static string GetSafeGenerationFailure(Exception exception) => exception switch
+    {
+        ServiceConfigurationException => exception.Message,
+        UpstreamServiceTimeoutException => exception.Message,
+        RoadmapGenerationException => exception.Message,
+        OperationCanceledException => "Roadmap generation was cancelled before it completed.",
+        _ => "The AI agents could not complete the roadmap. Please try again."
+    };
 
     [HttpPost("generate")]
     [ProducesResponseType<RoadmapResponse>(StatusCodes.Status200OK)]

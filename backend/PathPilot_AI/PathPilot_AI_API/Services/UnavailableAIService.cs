@@ -6,7 +6,7 @@ public sealed class UnavailableAIService : IRoadmapService, IReplanRoadmapServic
 {
     private const string Message = "The AI service is not configured. Configure OpenAI__ApiKey and OpenAI__Model in the application settings.";
 
-    public Task<RoadmapResponse> GenerateAsync(GenerateRoadmapRequest request, CancellationToken cancellationToken) =>
+    public Task<RoadmapResponse> GenerateAsync(GenerateRoadmapRequest request, CancellationToken cancellationToken, Func<RoadmapGenerationProgress, ValueTask>? reportProgress = null) =>
         Task.FromException<RoadmapResponse>(new ServiceConfigurationException(Message));
 
     public Task<RoadmapResponse> ReplanAsync(ReplanRoadmapRequest request, CancellationToken cancellationToken) =>

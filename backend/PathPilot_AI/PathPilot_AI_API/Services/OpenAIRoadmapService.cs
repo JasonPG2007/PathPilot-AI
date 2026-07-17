@@ -31,7 +31,8 @@ public sealed class OpenAIRoadmapService : IRoadmapService
 
     public async Task<RoadmapResponse> GenerateAsync(
         GenerateRoadmapRequest request,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        Func<RoadmapGenerationProgress, ValueTask>? reportProgress = null)
     {
         var apiKey = _configuration["OpenAI:ApiKey"];
         var model = _configuration["OpenAI:Model"];
@@ -49,6 +50,7 @@ public sealed class OpenAIRoadmapService : IRoadmapService
         try
         {
             var learnerJson = JsonSerializer.Serialize(request, JsonOptions);
+            await ReportProgressAsync(reportProgress, "planner_started", "planner");
             var initialRoadmap = await GenerateValidatedAsync<PlannerDraft>(
                 apiKey,
                 model,
@@ -60,8 +62,10 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 PlannerMaxOutputTokens,
                 GetPlannerValidationFailure,
                 cancellationToken);
+            await ReportProgressAsync(reportProgress, "planner_completed", "planner");
 
             var initialRoadmapJson = JsonSerializer.Serialize(initialRoadmap, JsonOptions);
+            await ReportProgressAsync(reportProgress, "critic_started", "critic");
             var criticFeedback = await GenerateValidatedAsync<CriticFeedback>(
                 apiKey,
                 model,
@@ -73,8 +77,10 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 CriticMaxOutputTokens,
                 GetCriticValidationFailure,
                 cancellationToken);
+            await ReportProgressAsync(reportProgress, "critic_completed", "critic");
 
             var criticJson = JsonSerializer.Serialize(criticFeedback, JsonOptions);
+            await ReportProgressAsync(reportProgress, "revision_started", "revision");
             var finalRoadmap = await GenerateValidatedAsync<RoadmapResponse>(
                 apiKey,
                 model,
@@ -86,7 +92,9 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 RevisionMaxOutputTokens,
                 GetRoadmapValidationFailure,
                 cancellationToken);
-            return NormalizeFeasibilityScore(finalRoadmap);
+            var normalizedRoadmap = NormalizeFeasibilityScore(finalRoadmap);
+            await ReportProgressAsync(reportProgress, "revision_completed", "revision");
+            return normalizedRoadmap;
         }
         catch (RoadmapGenerationException)
         {
@@ -99,6 +107,10 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 "The OpenAI roadmap request exceeded the configured 200-second service timeout.",
                 exception);
         }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
         catch (Exception exception)
         {
             _logger.LogError(exception, "The OpenAI roadmap workflow failed.");
@@ -107,6 +119,11 @@ public sealed class OpenAIRoadmapService : IRoadmapService
                 exception);
         }
     }
+
+    private static ValueTask ReportProgressAsync(
+        Func<RoadmapGenerationProgress, ValueTask>? reportProgress,
+        string eventName,
+        string stage) => reportProgress?.Invoke(new RoadmapGenerationProgress(eventName, stage)) ?? ValueTask.CompletedTask;
 
     private async Task<T> GenerateValidatedAsync<T>(
         string apiKey,

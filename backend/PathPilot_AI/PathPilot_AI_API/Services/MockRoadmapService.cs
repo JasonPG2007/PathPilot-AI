@@ -4,8 +4,12 @@ namespace PathPilot_AI_API.Services;
 
 public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
 {
-    public Task<RoadmapResponse> GenerateAsync(GenerateRoadmapRequest request, CancellationToken cancellationToken)
+    public async Task<RoadmapResponse> GenerateAsync(
+        GenerateRoadmapRequest request,
+        CancellationToken cancellationToken,
+        Func<RoadmapGenerationProgress, ValueTask>? reportProgress = null)
     {
+        await ReportAsync(reportProgress, "planner_started", "planner");
         var goal = request.Goal.Trim();
         var focus = GetFocus(goal);
         var goalPhrases = GetGoalPhrases(goal);
@@ -80,8 +84,18 @@ public sealed class MockRoadmapService : IRoadmapService, IReplanRoadmapService
                 new SuggestedProject(3, focus.CapstoneProject, "Capstone", $"Show readiness for {goalPhrases.Role} with a polished final system.", "blue")
             ]);
 
-        return Task.FromResult(roadmap);
+        await ReportAsync(reportProgress, "planner_completed", "planner");
+        await ReportAsync(reportProgress, "critic_started", "critic");
+        await ReportAsync(reportProgress, "critic_completed", "critic");
+        await ReportAsync(reportProgress, "revision_started", "revision");
+        await ReportAsync(reportProgress, "revision_completed", "revision");
+        return roadmap;
     }
+
+    private static ValueTask ReportAsync(
+        Func<RoadmapGenerationProgress, ValueTask>? reportProgress,
+        string eventName,
+        string stage) => reportProgress?.Invoke(new RoadmapGenerationProgress(eventName, stage)) ?? ValueTask.CompletedTask;
 
     public Task<RoadmapResponse> ReplanAsync(ReplanRoadmapRequest request, CancellationToken cancellationToken)
     {

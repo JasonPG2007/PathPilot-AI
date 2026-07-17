@@ -117,7 +117,7 @@ function ProcessingPage() {
       <section className="workflow-panel" aria-label="Roadmap generation progress">
         <div className="overall-progress">
           <div><span aria-live="polite">{status}</span><strong>{progress}%</strong></div>
-          <div aria-label={`${progress}% complete`} aria-valuemax="100" aria-valuemin="0" aria-valuenow={progress} className="progress-track" role="progressbar"><span style={{ width: `${progress}%` }} /></div>
+          <div aria-label={`${progress}% complete`} aria-valuemax="100" aria-valuemin="0" aria-valuenow={progress} className={`progress-track${!error && !isComplete ? ' progress-track--active' : ''}`} role="progressbar"><span style={{ width: `${progress}%` }} /></div>
         </div>
 
         <div className="agent-workflow">

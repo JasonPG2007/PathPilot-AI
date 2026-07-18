@@ -7,10 +7,11 @@ function GoalInput({ value, onChange }) {
         onChange={(event) => onChange(event.target.value)}
         placeholder="e.g. Senior Machine Learning Engineer at a Tier 1 startup"
         type="text"
+        autoFocus
         value={value}
       />
     </label>
-  )
+  );
 }
 
-export default GoalInput
+export default GoalInput;

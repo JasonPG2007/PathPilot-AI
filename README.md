@@ -70,7 +70,7 @@ The replan panel captures changed time constraints and learner difficulty while 
 
 The saved replan result clearly summarizes what changed, why it changed, and the updated workload, timeline, risk, and confidence without resetting progress or strategy selection.
 
-![Replanned roadmap with updated strategy metrics and Journey Replanned summary](docs/screenshots/adaptive.png)
+![Replanned roadmap with updated strategy metrics and Journey Replanned summary](docs/screenshots/roadmap.png)
 
 ### Learn with trusted resources
 
@@ -320,20 +320,20 @@ When the key is absent, Development can use deterministic mock services. Product
 
 ### Frontend
 
-| Name | Development example | Production example |
-| --- | --- | --- |
+| Name                | Development example     | Production example           |
+| ------------------- | ----------------------- | ---------------------------- |
 | `VITE_API_BASE_URL` | `http://localhost:5072` | Azure App Service API origin |
 
 Share & Export derives the safe app link from the current browser origin and route; no separate public-app URL variable is used.
 
 ### Backend
 
-| Azure/App Setting | Purpose | Example |
-| --- | --- | --- |
-| `OpenAI__ApiKey` | Backend-only OpenAI credential | `YOUR_API_KEY` |
-| `OpenAI__Model` | Required model name | `gpt-5.6` |
-| `AllowedOrigins__0` | First allowed frontend origin | `https://pathpilotaihackathon.vercel.app` |
-| `ASPNETCORE_ENVIRONMENT` | Runtime environment | `Production` |
+| Azure/App Setting        | Purpose                        | Example                                   |
+| ------------------------ | ------------------------------ | ----------------------------------------- |
+| `OpenAI__ApiKey`         | Backend-only OpenAI credential | `YOUR_API_KEY`                            |
+| `OpenAI__Model`          | Required model name            | `gpt-5.6`                                 |
+| `AllowedOrigins__0`      | First allowed frontend origin  | `https://pathpilotaihackathon.vercel.app` |
+| `ASPNETCORE_ENVIRONMENT` | Runtime environment            | `Production`                              |
 
 Additional origins can use `AllowedOrigins__1`, `AllowedOrigins__2`, and so on. Never commit real credentials.
 

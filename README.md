@@ -22,7 +22,7 @@ PathPilot behaves like an adaptive learning coach rather than a one-time roadmap
 - audits feasibility, workload, prerequisites, timeline, and project difficulty;
 - revises weak plans before presenting them;
 - preserves completed work during strategy changes and replanning;
-- explains individual skills, milestones, projects, and phases;
+- explains individual skills, milestones, and recommended projects;
 - adapts remaining work when learner constraints change; and
 - connects planning to persistent progress, achievements, and next actions.
 
@@ -34,6 +34,8 @@ PathPilot introduces the product as an adaptive AI learning coach: it plans a pa
 
 ![PathPilot AI landing page with learning-roadmap value proposition and agent workflow](docs/screenshots/landingpage.png)
 
+When a valid saved journey exists in the current browser, the Landing page shows its goal, selected strategy, and last-updated date with a **Continue Journey** action. Creating another journey remains available, but PathPilot asks for confirmation before replacing the saved roadmap.
+
 ### Create a personalized journey
 
 The learner defines a goal, starting level, timeline, weekly availability, existing skills, and preferred learning style. A live summary makes the constraints clear before generation begins.
@@ -42,7 +44,7 @@ The learner defines a goal, starting level, timeline, weekly availability, exist
 
 ### Planner → Critic → Revision
 
-Initial generation is an explicit sequential workflow: Planner drafts, Critic audits feasibility and prerequisite order, and Revision returns the validated final plan. These are orchestrated request stages, not autonomous background agents.
+Initial generation is an explicit sequential workflow: Planner drafts, Critic audits feasibility and prerequisite order, and Revision returns the validated final plan. The Processing page is driven by flushed Server-Sent Events for each real stage start and validated completion; it does not mark stages complete with timers. These are orchestrated request stages, not autonomous background agents.
 
 ![Processing screen showing Planner, Critic, and Revision stages](docs/screenshots/processing.png)
 
@@ -111,8 +113,9 @@ flowchart LR
 - **Personalized AI Coach Insights** generated with the roadmap
 - **Alternative Roadmaps:** Fast Track, Balanced, and Deep Mastery
 - **Adaptive Replanning** that revises unfinished work while preserving completed items
-- **Explain Why** for skills, milestones, projects, and phases
-- **Learner Memory** and refresh-safe local progress
+- **Explain Why** for skills, milestones, phase projects, and suggested portfolio projects
+- **Learner Memory** and browser-persistent local progress
+- **Continue Journey** with validated direct-route and browser-restart restoration
 - **Progress Tracking** with reversible skill and milestone completion
 - **Journey Dashboard** with current status, estimated finish, and next action
 - **Achievement Badges** derived deterministically from meaningful progress
@@ -158,16 +161,18 @@ flowchart TB
     subgraph Local["Deterministic browser systems"]
         Memory["Learner memory + progress<br/>localStorage"]
         Achievements["Achievement storage<br/>localStorage"]
-        Strategy["Strategy derivation service"]
+        Strategy["Canonical roadmap + strategy state<br/>localStorage"]
+        Explanations["Explanation cache<br/>localStorage"]
         Resources["Trusted resource catalog + matcher"]
         PDF["jsPDF export service"]
         Share["Share & Export service"]
-        Session["Active roadmap session<br/>sessionStorage"]
+        Session["Transient generation + route handoff<br/>sessionStorage"]
     end
 
     Frontend <--> Memory
     Frontend <--> Achievements
-    Frontend --> Strategy
+    Frontend <--> Strategy
+    Frontend <--> Explanations
     Frontend --> Resources
     Frontend --> PDF
     Frontend --> Share
@@ -175,6 +180,8 @@ flowchart TB
 ```
 
 Initial roadmap generation, Adaptive Replanning, and Explain Why are AI-backed. Progress, achievements, strategy derivation, resource matching, PDF export, and Share & Export are deterministic browser features and do not call OpenAI.
+
+The canonical roadmap, selected strategy, strategy-specific replan overrides, learner progress, achievements, and explanation cache are restored from validated `localStorage` records. `sessionStorage` remains in use only for transient generation-attempt and reset markers plus the immediate route-state handoff; it is not the source of browser-restart persistence.
 
 ## Multi-agent roadmap workflow
 
@@ -191,20 +198,37 @@ sequenceDiagram
     participant OpenAI as OpenAI Responses API
 
     User->>Frontend: Submit learner profile
-    Frontend->>API: POST /api/roadmaps/generate
+    Frontend->>API: POST /api/roadmaps/generate/stream
+    API-->>Frontend: planner_started (SSE)
     API->>Planner: Create compact draft
     Planner->>OpenAI: Structured Planner request
     OpenAI-->>Planner: Draft roadmap JSON
+    Planner->>API: Validate Planner output
+    API-->>Frontend: planner_completed (SSE)
+    API-->>Frontend: critic_started (SSE)
     API->>Critic: Review draft feasibility
     Critic->>OpenAI: Structured Critic request
     OpenAI-->>Critic: Concise critique JSON
+    Critic->>API: Validate Critic output
+    API-->>Frontend: critic_completed (SSE)
+    API-->>Frontend: revision_started (SSE)
     API->>Revision: Apply all critic feedback
     Revision->>OpenAI: Structured Revision request
     OpenAI-->>Revision: Final RoadmapResponse JSON
     Revision->>API: Validate schema and semantics
-    API-->>Frontend: Final personalized roadmap
+    API-->>Frontend: revision_completed (SSE)
+    API-->>Frontend: completed + final RoadmapResponse (SSE)
     Frontend-->>User: Display and store active journey locally
 ```
+
+Every SSE event is flushed after it is written. A stage-completed event is emitted only after that stage’s response has passed the required parsing and validation. A failure event identifies the active stage without marking later stages complete.
+
+## Progress, timeouts, and cancellation
+
+- Initial generation uses one guarded SSE request with a 210-second frontend timeout. React StrictMode subscribers share the same in-flight request, and only the visible Retry action starts a fresh attempt.
+- The Processing page keeps the current backend stage active and shows a finalizing state after Revision while it waits for the completed roadmap event; it does not invent timer-based completion.
+- Adaptive Replanning has an independent 180-second frontend timeout, blocks duplicate submissions, makes no automatic retry, and leaves the current roadmap visible if it fails.
+- The backend OpenAI HTTP client uses a 200-second timeout and propagates request cancellation. Confirmed client disconnects stop downstream processing; safe timeout, cancellation, configuration, validation, and upstream-failure details are returned through the applicable SSE failure event or `ProblemDetails` response.
 
 ## Adaptive workflow
 
@@ -241,8 +265,10 @@ Adaptive Replanning uses one normal GPT-5.6 revision call. It does not rerun Pla
 
 ### Persistence
 
-- `localStorage` for learner memory, progress, strategies, achievements, and explanation cache
-- `sessionStorage` for active roadmap and generation state
+- `localStorage` for the canonical saved roadmap, selected strategy, strategy-specific replans, learner memory, progress, achievements, and explanation cache
+- Validated roadmap hydration on direct `/roadmap` loads, refreshes, and browser restarts using storage version, journey identity, roadmap structure, and learner-memory matching
+- Landing-page **Continue Journey** restoration from the same validated persistence path
+- `sessionStorage` only for transient generation attempts, new-journey reset markers, and the immediate roadmap navigation handoff
 - No database and no authentication in the MVP
 
 ### Validation
@@ -356,7 +382,7 @@ dotnet publish -c Release
 ## Security and privacy
 
 - The OpenAI API key is backend-only and read from User Secrets or environment configuration.
-- Learner roadmaps, progress, achievements, and strategy state are stored locally in the browser.
+- Learner roadmaps, progress, achievements, strategy state, and cached explanations are stored locally in the browser.
 - Copied URLs contain no learner profile or roadmap content.
 - Copy App Link opens PathPilot but does not transfer the roadmap to another browser.
 - Share Summary and Copy Roadmap Summary happen only after a user action.
@@ -373,7 +399,8 @@ dotnet publish -c Release
 - Explain Why results are cached by journey and stable item ID.
 - Duplicate generation and replan submissions are guarded in the frontend.
 - Adaptive Replanning uses one normal request rather than rerunning the initial three stages.
-- Retries are bounded to explicitly eligible structured-output failures; incomplete, cancelled, authentication, quota, and timeout failures are surfaced safely.
+- Each initial Planner, Critic, or Revision stage allows at most one retry for eligible incomplete output, invalid JSON, or structured-output validation failures.
+- Cancellation, refusal, authentication, billing, quota, rate-limit, and other non-retryable failures do not trigger another AI request. Adaptive Replanning and frontend requests are not retried automatically.
 
 ## Current Limitations
 

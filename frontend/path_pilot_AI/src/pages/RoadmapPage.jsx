@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faDiagramProject } from '@fortawesome/free-solid-svg-icons'
@@ -20,6 +20,7 @@ import { getMilestoneId, getSkillId, loadLearnerMemory, resetLearnerProgress, to
 import { buildJourneyDashboard } from '../lib/journeyDashboard.js'
 import { formatTimeline } from '../lib/timelineFormat.js'
 import { startNewJourney } from '../lib/newJourney.js'
+import { restorePersistedRoadmap } from '../lib/roadmapHydration.js'
 import { requestReplan } from '../services/replanApi.js'
 import { getCachedExplanationItemIds, requestExplanation } from '../services/explanationApi.js'
 import { addExplanationView, addStrategyView, addSuccessfulReplan, evaluateAchievements, evaluateAndStoreAchievements, loadAchievementState } from '../services/achievements.js'
@@ -34,18 +35,16 @@ function hasReplanMetadata(strategyState) {
 function RoadmapPage() {
   const location = useLocation()
   const navigate = useNavigate()
-  const storedState = hasActiveGenerationAttempt() ? null : getStoredRoadmap()
-  const activeState = getMostRecentRoadmap(location.state, storedState)
-  const initialLearner = activeState?.learner
-  const initialRoadmap = activeState?.roadmap
-  const generatedAt = activeState?.generatedAt
-  const generationId = activeState?.generationId
-  const journeyId = generationId ?? generatedAt
-  const [strategyState, setStrategyState] = useState(() => journeyId && initialRoadmap ? loadStrategyState({ journeyId, canonicalBalancedRoadmap: initialRoadmap, generatedAt, sessionState: activeState }) : null)
+  const initialRouterState = useRef(location.state)
+  const [hydrating, setHydrating] = useState(true)
+  const [journey, setJourney] = useState(null)
+  const [strategyState, setStrategyState] = useState(null)
   const roadmap = strategyState ? getStrategyRoadmap(strategyState) : null
   const selectedStrategy = strategyState?.selectedStrategy
   const replanSummary = strategyState ? getStrategySummary(strategyState) : null
-  const [learner, setLearner] = useState(initialLearner)
+  const generatedAt = journey?.generatedAt
+  const generationId = journey?.generationId
+  const [learner, setLearner] = useState(null)
   const [replanOpen, setReplanOpen] = useState(false)
   const [replanPending, setReplanPending] = useState(false)
   const replanInFlight = useRef(false)
@@ -56,15 +55,64 @@ function RoadmapPage() {
   const [explanationLoading, setExplanationLoading] = useState(false)
   const displayLearner = learner && roadmap ? { ...learner, hours: roadmap.weeklyHours, timeline: formatTimeline(roadmap.timeline) } : learner
   const memoryContext = displayLearner && roadmap && generatedAt ? { learner: displayLearner, roadmap, generatedAt } : null
-  const [memory, setMemory] = useState(() => memoryContext ? loadLearnerMemory(memoryContext) : null)
-  const [achievementState, setAchievementState] = useState(() => {
-    if (!journeyId || !roadmap || !memory || !selectedStrategy) return null
-    let state = addStrategyView(loadAchievementState(journeyId), selectedStrategy)
-    for (const itemId of getCachedExplanationItemIds(journeyId)) state = addExplanationView(state, itemId)
-    if (hasReplanMetadata(strategyState) && state.replanCount === 0) state = addSuccessfulReplan(state)
-    return evaluateAndStoreAchievements({ state, roadmap, memory, hasReplan: hasReplanMetadata(strategyState) }).state
-  })
+  const [memory, setMemory] = useState(null)
+  const [achievementState, setAchievementState] = useState(null)
   const [achievementAnnouncement, setAchievementAnnouncement] = useState('')
+
+  useEffect(() => {
+    const storedState = hasActiveGenerationAttempt() ? null : getStoredRoadmap()
+    const transientState = getMostRecentRoadmap(initialRouterState.current, storedState)
+    const activeState = transientState ?? (hasActiveGenerationAttempt() ? null : restorePersistedRoadmap())
+
+    if (!activeState) {
+      setHydrating(false)
+      return
+    }
+
+    const restoredGenerationId = activeState.generationId
+    const restoredGeneratedAt = activeState.generatedAt
+    const restoredJourneyId = restoredGenerationId ?? restoredGeneratedAt
+    const restoredStrategyState = loadStrategyState({
+      journeyId: restoredJourneyId,
+      canonicalBalancedRoadmap: activeState.roadmap,
+      generatedAt: restoredGeneratedAt,
+      sessionState: transientState,
+    })
+    const restoredRoadmap = getStrategyRoadmap(restoredStrategyState)
+    const restoredLearner = {
+      ...activeState.learner,
+      hours: restoredRoadmap.weeklyHours,
+      timeline: formatTimeline(restoredRoadmap.timeline),
+    }
+    const restoredMemory = loadLearnerMemory({ learner: restoredLearner, roadmap: restoredRoadmap, generatedAt: restoredGeneratedAt })
+    const restoredStrategy = restoredStrategyState.selectedStrategy
+    let restoredAchievements = addStrategyView(loadAchievementState(restoredJourneyId), restoredStrategy)
+    for (const itemId of getCachedExplanationItemIds(restoredJourneyId)) restoredAchievements = addExplanationView(restoredAchievements, itemId)
+    if (hasReplanMetadata(restoredStrategyState) && restoredAchievements.replanCount === 0) restoredAchievements = addSuccessfulReplan(restoredAchievements)
+    restoredAchievements = evaluateAndStoreAchievements({
+      state: restoredAchievements,
+      roadmap: restoredRoadmap,
+      memory: restoredMemory,
+      hasReplan: hasReplanMetadata(restoredStrategyState),
+    }).state
+
+    setJourney({ generationId: restoredGenerationId, generatedAt: restoredGeneratedAt })
+    setLearner(activeState.learner)
+    setStrategyState(restoredStrategyState)
+    setMemory(restoredMemory)
+    setAchievementState(restoredAchievements)
+    setHydrating(false)
+  }, [])
+
+  if (hydrating) {
+    return (
+      <div className="roadmap-page roadmap-empty-state" role="status" aria-busy="true" aria-live="polite">
+        <p className="roadmap-kicker">RESTORING JOURNEY</p>
+        <h1>Loading your saved roadmap…</h1>
+        <p>Restoring your strategy and progress from this browser.</p>
+      </div>
+    )
+  }
 
   if (!displayLearner || !roadmap || !memory || !memoryContext || !strategyState || !achievementState) {
     return (

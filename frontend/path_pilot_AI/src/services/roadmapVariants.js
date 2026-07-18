@@ -280,6 +280,33 @@ function isValidEntry(entry) {
   )
 }
 
+function isValidPersistedState(state) {
+  return Boolean(
+    state?.version === STORE_VERSION &&
+    typeof state.journeyId === 'string' &&
+    state.journeyId.trim() &&
+    strategyDefinitions[state.selectedStrategy] &&
+    state.canonicalBalancedRoadmap &&
+    Array.isArray(state.canonicalBalancedRoadmap.phases) &&
+    Object.keys(strategyDefinitions).every((strategy) => (
+      isValidEntry(state.strategies?.[strategy]) &&
+      state.strategies[strategy].strategyId === strategy
+    )),
+  )
+}
+
+export function getPersistedStrategyState(expectedJourneyId = null) {
+  if (typeof localStorage === 'undefined') return null
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY))
+    if (!isValidPersistedState(stored)) return null
+    if (expectedJourneyId && stored.journeyId !== expectedJourneyId) return null
+    return stored
+  } catch {
+    return null
+  }
+}
+
 function versionTime(value) {
   for (const timestamp of [value?.replannedAt, value?.generatedAt, value?.updatedAt]) {
     const parsed = Date.parse(timestamp)

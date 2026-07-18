@@ -15,18 +15,18 @@ import {Scene11_PDFShare} from './scenes/Scene11_PDFShare';
 import {Scene12_Ending} from './scenes/Scene12_Ending';
 
 export const sceneDurations = {
-  hook: 120,
-  landing: 150,
-  createJourney: 165,
-  generation: 180,
-  roadmap: 180,
-  strategies: 165,
-  explainWhy: 150,
-  replanning: 180,
-  dashboard: 165,
-  resources: 150,
-  pdfShare: 180,
-  ending: 135,
+  hook: 180,
+  landing: 240,
+  createJourney: 420,
+  generation: 480,
+  roadmap: 300,
+  strategies: 300,
+  explainWhy: 330,
+  replanning: 540,
+  dashboard: 300,
+  resources: 270,
+  pdfShare: 480,
+  ending: 210,
 } as const;
 
 export const TOTAL_DURATION = Object.values(sceneDurations).reduce((sum, duration) => sum + duration, 0);

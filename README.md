@@ -70,8 +70,6 @@ The replan panel captures changed time constraints and learner difficulty while 
 
 The saved replan result clearly summarizes what changed, why it changed, and the updated workload, timeline, risk, and confidence without resetting progress or strategy selection.
 
-![Replanned roadmap with updated strategy metrics and Journey Replanned summary](docs/screenshots/roadmap.png)
-
 ### Learn with trusted resources
 
 Each phase is grounded in a deterministic catalog of reputable providers. Recommendations explain their skill match and strategy fit rather than relying on generated or invented links.

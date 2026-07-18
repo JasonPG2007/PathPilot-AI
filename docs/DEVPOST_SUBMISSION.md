@@ -95,17 +95,24 @@ Prompt engineering was less about adding instructions and more about removing du
 
 Most importantly, not every feature benefits from AI. GPT-5.6 handles planning judgment, critique, explanation, and revision. Stable calculations, persistence, resources, achievements, strategy transformations, sharing, and exports are faster, cheaper, and more predictable as deterministic logic.
 
-## 10. What’s next
+## 10. Current Limitations
 
-- Optional accounts and cross-device journey synchronization
-- Educator and mentor dashboards with learner-controlled sharing
-- Institution-level deployment and administration
-- Verified curriculum and learning-platform integrations
-- Explicitly consented, read-only cloud-shared roadmaps
-- Stronger evaluation of roadmap quality and learner outcomes
-- Collaborative review and mentoring workflows
+- Roadmaps, learner progress, strategy selection, and related journey state are currently stored in the user's browser using `localStorage`.
+- Saved data persists across refreshes and browser restarts on the same browser and device.
+- Journey data does not currently synchronize across browsers or devices.
+- Clearing browser storage, using private browsing, changing domains, or switching devices may make saved journey data unavailable.
+- PathPilot does not currently require user accounts or use cloud storage for learner journeys.
+- PDF export is a human-readable document only; it cannot restore roadmap or progress state.
 
-## 11. AI Usage
+## 11. What's Next
+
+- Optional account-based synchronization
+- Multi-device access
+- Portable journey backup and restore using structured JSON
+- Cloud persistence with user-controlled privacy settings
+- Improved collaboration and sharing controls
+
+## 12. AI Usage
 
 PathPilot uses **GPT-5.6 through the OpenAI Responses API** for a small set of judgment-heavy workflows:
 
@@ -119,7 +126,7 @@ The product does not present these stages as fully autonomous agents. They are e
 
 The following features are **not AI-generated**: learner-memory persistence, completion tracking, Journey Dashboard calculations, achievement evaluation, Fast/Balanced/Deep strategy derivation, resource matching, PDF export, sharing summaries, and reset behavior. These run deterministically in the browser and make no OpenAI request.
 
-## 12. Open Source
+## 13. Open Source
 
 ### Repository map
 
@@ -163,4 +170,3 @@ Production uses Azure App Settings such as `OpenAI__ApiKey`, `OpenAI__Model`, an
 
 - Frontend: https://pathpilotaihackathon.vercel.app
 - Backend health: https://pathpilot-ai-api-2026-agbtbaahced0aff0.centralus-01.azurewebsites.net/health
-

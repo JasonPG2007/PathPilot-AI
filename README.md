@@ -377,26 +377,22 @@ dotnet publish -c Release
 - Adaptive Replanning uses one normal request rather than rerunning the initial three stages.
 - Retries are bounded to explicitly eligible structured-output failures; incomplete, cancelled, authentication, quota, and timeout failures are surfaced safely.
 
-## Known limitations
+## Current Limitations
 
-- Learner persistence is local to the current browser and device.
-- There is no user authentication or cloud synchronization.
-- There is no cloud-hosted public roadmap sharing.
-- Copy App Link does not recreate a roadmap in another browser.
-- Generation and replanning can take time on free hosting tiers.
-- Trusted resources use a deterministic curated catalog rather than full retrieval-augmented generation.
-- Progress and achievements are not synchronized across devices.
-- Estimated finish dates are planning guides, not guarantees.
+- Roadmaps, learner progress, strategy selection, and related journey state are currently stored in the user's browser using `localStorage`.
+- Saved data persists across refreshes and browser restarts on the same browser and device.
+- Journey data does not currently synchronize across browsers or devices.
+- Clearing browser storage, using private browsing, changing domains, or switching devices may make saved journey data unavailable.
+- PathPilot does not currently require user accounts or use cloud storage for learner journeys.
+- PDF export is a human-readable document only; it cannot restore roadmap or progress state.
 
-## Future work
+## Future Improvements
 
-- Account-based cloud synchronization
-- True read-only public roadmap snapshots with explicit consent
-- Educator dashboards
-- Verified curriculum integrations
-- Collaborative mentoring
-- Institution-level deployment
-- Richer learner outcome evaluation
+- Optional account-based synchronization
+- Multi-device access
+- Portable journey backup and restore using structured JSON
+- Cloud persistence with user-controlled privacy settings
+- Improved collaboration and sharing controls
 
 ## Built for OpenAI Build Week
 

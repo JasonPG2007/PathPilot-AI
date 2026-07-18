@@ -29,6 +29,7 @@ export function restorePersistedRoadmap(expectedJourneyId = null) {
     const memory = JSON.parse(localStorage.getItem(learnerMemoryKey))
     const generatedAt = getCanonicalGeneratedAt(strategyState)
     if (!isMatchingLearnerMemory(memory, strategyState, generatedAt)) return null
+    const selectedEntry = strategyState.strategies[strategyState.selectedStrategy]
 
     return {
       learner: memory.learnerProfile,
@@ -37,6 +38,7 @@ export function restorePersistedRoadmap(expectedJourneyId = null) {
       generatedAt,
       source: 'api',
       selectedStrategy: strategyState.selectedStrategy,
+      lastUpdated: selectedEntry.replannedAt ?? selectedEntry.updatedAt ?? selectedEntry.generatedAt ?? strategyState.updatedAt ?? null,
     }
   } catch {
     return null

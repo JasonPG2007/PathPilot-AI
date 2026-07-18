@@ -1,5 +1,5 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom'
-import { startNewJourney } from '../../lib/newJourney.js'
+import { confirmAndStartNewJourney } from '../../lib/newJourney.js'
 
 function Header() {
   const navigate = useNavigate()
@@ -15,7 +15,7 @@ function Header() {
       </nav>
       <div className="header-actions">
         <button className="login-button" type="button">Log in</button>
-        <button className="button button--small" onClick={() => startNewJourney(navigate)} type="button">Start Journey</button>
+        <button className="button button--small" onClick={() => confirmAndStartNewJourney(navigate)} type="button">Start Journey</button>
       </div>
     </div>
   )

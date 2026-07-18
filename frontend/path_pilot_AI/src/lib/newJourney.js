@@ -2,6 +2,9 @@ import { clearLearnerMemory } from './learnerMemory.js'
 import { clearRoadmapSession, devLog, markNewJourneyReset } from './roadmapSession.js'
 import { clearRoadmapStrategyState } from '../services/roadmapVariants.js'
 import { clearAchievementState } from '../services/achievements.js'
+import { restorePersistedRoadmap } from './roadmapHydration.js'
+
+const REPLACE_JOURNEY_MESSAGE = 'Starting a new journey will replace your current saved roadmap. Continue?'
 
 export function createGenerationId() {
   return crypto.randomUUID()
@@ -23,3 +26,12 @@ export function startNewJourney(navigate) {
   navigate('/create', { replace: true, state: { newJourneyResetId: resetId } })
   return resetId
 }
+
+export function confirmAndStartNewJourney(navigate, options = {}) {
+  const savedRoadmap = options.savedRoadmap === undefined ? restorePersistedRoadmap() : options.savedRoadmap
+  const confirmReplacement = options.confirmReplacement ?? ((message) => window.confirm(message))
+  if (savedRoadmap && !confirmReplacement(REPLACE_JOURNEY_MESSAGE)) return null
+  return startNewJourney(navigate)
+}
+
+export const newJourneyReplacementMessage = REPLACE_JOURNEY_MESSAGE

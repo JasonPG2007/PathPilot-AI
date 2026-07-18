@@ -1,0 +1,4 @@
+# Keep this folder in Git, but ignore all recordings
+*
+!.gitignore
+!.gitkeep

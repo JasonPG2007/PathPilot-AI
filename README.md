@@ -419,6 +419,18 @@ dotnet publish -c Release
 - Cloud persistence with user-controlled privacy settings
 - Improved collaboration and sharing controls
 
+## How OpenAI accelerated development
+
+PathPilot AI was built with both GPT-5.6 and Codex.
+
+### GPT-5.6
+
+GPT-5.6 powers the application's AI workflows. It generates personalized learning roadmaps, critiques and improves plans, explains recommendations, compares learning strategies, and adapts roadmaps as learners progress.
+
+### Codex
+
+Codex accelerated development throughout the project. It helped implement React components, debug ASP.NET Core APIs, refine the Remotion production pipeline, improve UI behavior, fix recording alignment and subtitle positioning, and rapidly iterate on the final demo. By shortening the implementation and debugging cycle, Codex allowed us to spend more time improving the product experience.
+
 ## Built for OpenAI Build Week
 
 PathPilot AI was built for OpenAI Build Week using GPT-5.6 through the Responses API and Codex-assisted development. Its initial AI workflow is Planner → Critic → Revision. Adaptive Replanning and Explain Why are separate, focused AI workflows.

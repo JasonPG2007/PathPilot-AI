@@ -15,7 +15,6 @@ export const RecordedClip = ({
   label,
   sourceStartFrame,
   playbackRate = 1,
-  objectPosition = 'center',
 }: RecordedClipProps) => {
   const [failed, setFailed] = useState(false);
 
@@ -29,7 +28,13 @@ export const RecordedClip = ({
         playbackRate={playbackRate}
         muted
         onError={() => setFailed(true)}
-        style={{objectPosition}}
+        style={{
+          display: 'block',
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          objectPosition: 'center center',
+        }}
       />
     </div>
   );

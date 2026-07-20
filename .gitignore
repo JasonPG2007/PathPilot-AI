@@ -28,3 +28,11 @@ dist/
 
 # Coverage
 coverage/
+
+# Remotion
+video/.remotion-temp/
+video/out/
+video-assets/narration/
+
+# Local editor history
+.history/

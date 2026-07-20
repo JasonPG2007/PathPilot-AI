@@ -1,10 +1,12 @@
 export const assets = {
-  logo: 'branding/pathpilot-logo.png',
+  narration: 'narration/PathPilot-Narration-Final.mp3',
+  logo: '',
   music: 'audio/background-music.mp3',
   formToProcessingRecording: 'recordings/2026-07-17 22-45-14.mp4',
-  generationAndRoadmapRecording: 'recordings/2026-07-17 22-46-12.mp4',
+  generationAndRoadmapRecording: 'recordings/2026-07-17 22-45-14.mp4',
   replanningRecording: 'recordings/2026-07-17 22-50-03.mp4',
   exportRecording: 'recordings/2026-07-17 22-51-38.mp4',
+  resourcesRecording: 'recordings/2026-07-17 22-51-38.mp4',
   landing: 'screenshots/landing.png',
   createJourney: 'screenshots/create.png',
   generationFallback: 'screenshots/processing.png',
@@ -17,5 +19,5 @@ export const assets = {
   pdf: 'screenshots/pdf.png',
   share: 'screenshots/share.png',
   mobile: 'screenshots/mobile.png',
-  ending: 'branding/pathpilot-ending.png',
+  ending: '',
 } as const;

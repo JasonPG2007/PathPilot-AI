@@ -13,9 +13,9 @@ body { margin: 0; }
 .scene__header p { margin: 0 0 6px; color: #66738e; font-size: 24px; line-height: 1.45; }
 .scene__media { position: relative; z-index: 2; width: 1500px; height: 740px; margin: auto; border: 1px solid rgba(15,25,51,.1); border-radius: 28px; box-shadow: 0 30px 90px rgba(15,25,51,.17); background: white; overflow: hidden; }
 .zoom-image, .zoom-image img { width: 100%; height: 100%; }
-.recorded-clip, .recorded-clip video { width: 100%; height: 100%; }
-.recorded-clip { overflow: hidden; background: white; }
-.recorded-clip video { display: block; object-fit: cover; }
+.recorded-clip, .recorded-clip video, .recorded-clip img { width: 100%; height: 100%; }
+.recorded-clip { position: relative; display: grid; place-items: center; overflow: hidden; background: white; }
+.recorded-clip video, .recorded-clip img { display: block; min-width: 0; min-height: 0; object-fit: cover !important; object-position: center center !important; }
 .zoom-image { overflow: hidden; background: white; }
 .zoom-image img { display: block; object-fit: cover; transform-origin: center; }
 .asset-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 16px; color: #0f1933; background: repeating-linear-gradient(135deg,#f4f8fc,#f4f8fc 24px,#eef4f8 24px,#eef4f8 48px); }
@@ -25,12 +25,13 @@ body { margin: 0; }
 .highlight-box span { position: absolute; left: 18px; top: -22px; padding: 8px 13px; border-radius: 999px; background: #0f1933; color: #fff; font-size: 15px; font-weight: 700; }
 .arrow-callout { position: absolute; display: flex; gap: 10px; align-items: center; padding: 14px 18px; border-radius: 14px; color: #fff; background: #0f1933; box-shadow: 0 16px 40px rgba(15,25,51,.24); }
 .arrow-callout span { color: #22c7a9; font-size: 26px; }.arrow-callout strong { font-size: 18px; }
-.subtitle { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); max-width: 1320px; padding: 16px 26px; border-radius: 16px; color: white; background: rgba(15,25,51,.92); font-size: 25px; line-height: 1.35; text-align: center; box-shadow: 0 14px 40px rgba(15,25,51,.22); }
+.subtitle-anchor { display: none; }
+.subtitle { position: fixed; z-index: 20; left: 50%; bottom: 45px; transform: translateX(-50%); max-width: 1320px; padding: 16px 26px; border-radius: 16px; color: white; background: rgba(15,25,51,.90); font-size: 25px; line-height: 1.35; text-align: center; white-space: pre-line; box-shadow: 0 14px 40px rgba(15,25,51,.22); }
 .workflow-pills { position: absolute; top: 30px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px; align-items: center; padding: 12px; border-radius: 999px; background: rgba(255,255,255,.94); box-shadow: 0 10px 30px rgba(15,25,51,.16); }
 .workflow-pills span { padding: 8px 14px; border-radius: 999px; color: #0f1933; background: #dff9f3; font-size: 15px; font-weight: 800; letter-spacing: .08em; }.workflow-pills b { color: #5947ee; }
 .media-switch-label { position: absolute; top: 26px; right: 28px; padding: 10px 15px; border-radius: 999px; background: #0f1933; color: white; font-size: 15px; font-weight: 800; letter-spacing: .1em; }
 .hook-scene, .ending-scene { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: white; background: radial-gradient(circle at 68% 20%,rgba(34,199,169,.34),transparent 30%), linear-gradient(140deg,#0f1933,#192747 65%,#113d46); }
-.brand-asset { width: auto; max-width: 300px; height: 70px; object-fit: contain; margin-bottom: 24px; }.brand-asset--missing { display: grid; place-items: center; padding: 0 24px; border: 1px dashed rgba(143,241,223,.65); border-radius: 14px; color: #8ff1df; font-size: 16px; font-weight: 700; letter-spacing: .08em; }
+.brand-asset { width: auto; max-width: 300px; height: 70px; object-fit: contain; margin-bottom: 24px; }
 .hook-scene__badge { margin-bottom: 34px; padding: 12px 20px; border: 1px solid rgba(34,199,169,.6); border-radius: 999px; color: #8ff1df; font-size: 18px; font-weight: 800; letter-spacing: .18em; }
 .hook-scene h1, .ending-scene h1 { margin: 0; font-size: 92px; line-height: 1.04; letter-spacing: -.055em; }.hook-scene h1 em, .ending-scene h1 span { color: #59e2c8; font-style: normal; }
 .hook-scene p { margin-top: 30px; font-size: 28px; color: #cbd5e7; }

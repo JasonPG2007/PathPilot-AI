@@ -13,6 +13,6 @@ export const Scene01_Hook = ({durationInFrames}: SceneProps) => {
     <span className="hook-scene__badge">PATHPILOT AI</span>
     <h1 style={{transform: `translateY(${rise}px)`}}>A roadmap that adapts<br/><em>as the learner does.</em></h1>
     <p>Plan with rigor. Learn with context. Adapt without losing progress.</p>
-    <Subtitle cues={[{from: 10, to: durationInFrames - 10, text: 'Subtitle placeholder — meet your adaptive AI learning coach.'}]} />
+    <Subtitle cues={[{from: 4, to: durationInFrames - 4, text: 'An adaptive AI learning coach.'}]} />
   </div></Transition>;
 };

@@ -14,6 +14,6 @@ export const Scene12_Ending = ({durationInFrames}: SceneProps) => {
     <div className="ending-scene__logo" style={{transform: `scale(${scale})`}}>PathPilot <em>AI</em></div>
     <h1>Plan with rigor.<br/>Learn with context.<br/><span>Adapt without losing progress.</span></h1>
     <p>pathpilotaihackathon.vercel.app</p>
-    <Subtitle cues={[{from: 8, to: durationInFrames - 8, text: 'Subtitle placeholder — close with the PathPilot AI value proposition.'}]} />
+    <Subtitle cues={[{from: 4, to: durationInFrames - 4, text: 'PathPilot AI\nYour journey, built to adapt.'}]} />
   </div></Transition>;
 };

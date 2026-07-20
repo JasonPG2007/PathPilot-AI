@@ -1,6 +1,6 @@
-import {Series} from 'remotion';
+import {Audio} from '@remotion/media';
+import {Series, staticFile} from 'remotion';
 import {assets} from './assetManifest';
-import {BackgroundMusic} from './components/BackgroundMusic';
 import {Scene01_Hook} from './scenes/Scene01_Hook';
 import {Scene02_Landing} from './scenes/Scene02_Landing';
 import {Scene03_CreateJourney} from './scenes/Scene03_CreateJourney';
@@ -15,25 +15,25 @@ import {Scene11_PDFShare} from './scenes/Scene11_PDFShare';
 import {Scene12_Ending} from './scenes/Scene12_Ending';
 
 export const sceneDurations = {
-  hook: 180,
-  landing: 240,
-  createJourney: 420,
-  generation: 480,
-  roadmap: 300,
-  strategies: 300,
-  explainWhy: 330,
-  replanning: 540,
-  dashboard: 300,
-  resources: 270,
-  pdfShare: 480,
-  ending: 210,
+  hook: 126,
+  landing: 191,
+  createJourney: 292,
+  generation: 393,
+  roadmap: 257,
+  strategies: 238,
+  explainWhy: 256,
+  replanning: 346,
+  dashboard: 235,
+  resources: 215,
+  pdfShare: 344,
+  ending: 175,
 } as const;
 
 export const TOTAL_DURATION = Object.values(sceneDurations).reduce((sum, duration) => sum + duration, 0);
 
 export const PathPilotDemo = ({musicVolume}: {musicVolume: number}) => (
   <div className="video-root">
-    <BackgroundMusic src={assets.music} volume={musicVolume} />
+    <Audio src={staticFile(assets.narration)} />
     <Series>
       <Series.Sequence durationInFrames={sceneDurations.hook}><Scene01_Hook durationInFrames={sceneDurations.hook} /></Series.Sequence>
       <Series.Sequence durationInFrames={sceneDurations.landing}><Scene02_Landing durationInFrames={sceneDurations.landing} /></Series.Sequence>
